@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Formulario de contacto para solicitar más información.">
+    <title>Contacto</title>
+</head>
+
+<body>
+<header>
+    <h1>Contacto</h1>
+
+    <nav aria-label="Navegación principal">
+        <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="detalles.html">Detalles</a></li>
+            <li><a href="bocetos.html">Bocetos</a></li>
+            <li><a href="miembros.html">Miembros</a></li>
+            <li><a href="planificacion.html">Planificación</a></li>
+            <li><a href="contacto.html">Contacto</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <p>
+        Rellena este formulario para pedir más información. Al enviar, se abrirá tu cliente de correo con los datos.
+    </p>
+
+    <form action="mailto:correo@ejemplo.com" method="post" enctype="text/plain">
+        <fieldset>
+            <legend>Datos de contacto</legend>
+
+            <p>
+                <label for="nombre">Nombre:</label><br>
+                <input type="text" id="nombre" name="nombre" required>
+            </p>
+
+            <p>
+                <label for="email">Dirección de email de contacto:</label><br>
+                <input type="email" id="email" name="email" required>
+            </p>
+        </fieldset>
+
+        <fieldset>
+            <legend>Motivo de la consulta</legend>
+
+            <p>
+                <input type="radio" id="motivo-evaluacion" name="motivo" value="Evaluación" required>
+                <label for="motivo-evaluacion">Evaluación</label><br>
+
+                <input type="radio" id="motivo-sugerencias" name="motivo" value="Sugerencias">
+                <label for="motivo-sugerencias">Sugerencias</label><br>
+
+                <input type="radio" id="motivo-criticas" name="motivo" value="Críticas">
+                <label for="motivo-criticas">Críticas</label>
+            </p>
+        </fieldset>
+
+        <fieldset>
+            <legend>Consulta</legend>
+
+            <p>
+                <input type="checkbox" id="terminos" name="terminos" value="leido" required>
+                <label for="terminos">Marque esta casilla para verificar que ha leído nuestros términos y condiciones del servicio</label>
+            </p>
+
+            <p>
+                <label for="consulta">Escribe tu consulta:</label><br>
+                <textarea id="consulta" name="consulta" rows="6" cols="50" placeholder="Escribe aquí tu mensaje..."></textarea>
+            </p>
+        </fieldset>
+
+        <p>
+            <button type="submit">Enviar</button>
+            <button type="reset">Borrar formulario</button>
+        </p>
+    </form>
+</main>
+
+<footer>
+    <address>
+        Si lo prefieres, escríbenos directamente a <a href="mailto:zhengl02@ucm.es">zhengl02@ucm.es</a>.
+    </address>
+</footer>
+</body>
+</html>
+
+
