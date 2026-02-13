@@ -2,69 +2,115 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Detalles del proyecto</title>
 </head>
-
 <body>
 
-
-
   <main>
-
-    <h1>Detalles del Proyecto</h1>
+    <h1>Detalles del Proyecto: Bistro FDI</h1>
 
     <section>
-      <h2>Introducción</h2>
+      <h2>Introduccion</h2>
       <p>
-        Nuestra aplicación web representa una academia de clases particulares y tutorías 
-        orientadas a estudiantes universitarios. El objetivo principal es facilitar el 
-        contacto entre alumnos y profesores especializados en distintas asignaturas.
+        Bistro FDI es una pagina web para llevar lo que pasa en un restaurante o una cafeteria.
+        Sirve para que los <strong>clientes</strong> pidan cosas (para comer alli o para llevar),
+        puedan ver por donde va su comida y pagar. Tambien los <strong>cocineros</strong> ven lo que hay que cocinar,
+        los <strong>camareros</strong> cobran los pedidos y el <strong>gerene</strong> cambia
+        los productos y las ofertas. La web se tiene que ver bien en el movil y en el ordenador
       </p>
       <p>
-        La plataforma permite consultar asignaturas disponibles, reservar tutorías, 
-        organizar horarios y mejorar el seguimiento académico del estudiante. 
-        Está pensada para ayudar a los alumnos a reforzar conocimientos, preparar 
-        exámenes y resolver dudas de forma personalizada.
+        En la practica hay que hacer vistas para ver las listas, crear cosas nuevas, editar y borrar
+        los usuarios, productos y demas. En esta pagina explico como funciona todo un poco
       </p>
     </section>
 
     <section>
-      <h2>Tipos de usuarios</h2>
+      <h2>Tipos de usuarios que hay</h2>
 
-      <h3>Estudiantes</h3>
+      <h3>Cliente</h3>
       <ul>
-        <li>Consultar asignaturas disponibles.</li>
-        <li>Reservar clases particulares o tutorías.</li>
-        <li>Gestionar sus reservas.</li>
-        <li>Contactar con la academia.</li>
+        <li>Registrarse y entrar con su cuenta</li>
+        <li>Mirar la carta con las categorias y ver que lleva cada plato</li>
+        <li>Meter cosas al carrito, elegir si es para llevar y pagar (es de mentira)</li>
+        <li>Ver sus pedidos en el perfil y usar las recompesas con los BistroCoins</li>
       </ul>
 
-      <h3>Profesores</h3>
+      <h3>Cocinero</h3>
       <ul>
-        <li>Indicar las asignaturas que imparten.</li>
-        <li>Gestionar su disponibilidad horaria.</li>
-        <li>Consultar las tutorías asignadas.</li>
+        <li>Ver la lista de platos que estan "En preparacion" o "Cocinando"</li>
+        <li>Elegir un pedido para ponerse a cocinarlo</li>
+        <li>Darle al boton de terminar para que pase a "Listo cocina"</li>
       </ul>
 
-      <h3>Administrador</h3>
+      <h3>Camarero</h3>
       <ul>
-        <li>Gestionar usuarios registrados.</li>
-        <li>Organizar horarios generales.</li>
-        <li>Supervisar el funcionamiento de la plataforma.</li>
+        <li>Ver que pedidos estan listos para cobrar</li>
+        <li>Entregar el pedido al cliente y ponerlo como "Terminado"</li>
+        <li>Que se vea bien en la tablet cuando la pones de lado</li>
+      </ul>
+
+      <h3>Gerente (el jefe)</h3>
+      <ul>
+        <li>Gestionar las categorias y los productos (crear, editar o quitar)</li>
+        <li>Poner las ofertas y los premios</li>
+        <li>Ver todos los pedidos de la gente y que cocinero lo esta haciendo.</li>
       </ul>
     </section>
 
     <section>
-      <h2>Funcionalidades</h2>
+      <h2>Funcionalidades (resumen de lo que hace cada uno)</h2>
 
       <ol>
         <li>
-          <strong>Registro de usuarios:</strong>
-          Permite a estudiantes y profesores crear una cuenta en la plataforma.
+          <strong>0 — Gestion de usuarios:</strong>
+          Para crear y borrar usuarios y ponerles el rol de cliente, camarero o lo que sea.
+          Si alguien se registra nuevo es <em>cliente</em> por defecto
         </li>
 
         <li>
-          <strong>Inicio de sesión:</strong>
-          Acceso seguro a la zona privada de cada usuario.
+          <strong>1 — Productos y categorias:</strong>
+          El jefe crea las categorias y los productos con fotos, precio, el IVA y si esta <em>ofertado</em> o no. Hay que hacer paginas para ver la lista y editar
         </li>
+
+        <li>
+          <strong>2 — Hacer pedidos:</strong>
+          El cliente entra -> elige local/para llevar -> elige la comida -> lo mete al carro ->
+          paga -> y le dan un numero de pedido. El pedido guarda que ha comprado, el estado y la hora
+        </li>
+
+        <li>
+          <strong>3 — Cocinar:</strong>
+          Pantalla para los cocineros para pillar pedidos y decir cuando estan hechos. El jefe vigila quien hace cada cosa
+        </li>
+
+        <li>
+          <strong>4 — Las ofertas:</strong>
+          El jefe crea ofertas con descuento para ciertos productos. El cliente las usa si cumple las condiciones del descuento
+        </li>
+
+        <li>
+          <strong>5 — Recompesas (BistroCoins):</strong>
+          Ganas 1 punto por cada euro que gastas. Luego los canjeas por comida gratis. El jefe decide que premios hay.
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Notas de diseño y otras cosas</h2>
+      <ul>
+        <li>Que las pantallas no esten muy cargadas: el movil en vertical y la tablet de lado</li>
+        <li>El numero de pedido empieza en el 1 cada dia</li>
+        <li>Si el jefe borra un producto, mejor marcarlo como "no ofertado" por si acaso</li>
+        <li>Las fotos van en la carpeta <code>img/</code> (en formato PNG o JPG)</li>
+      </ul>
+    </section>
+
+    <section>
+      <p><a href="index.html">Volver atras</a></p>
+    </section>
+
+  </main>
+
+</body>
+</html>
+
