@@ -124,8 +124,9 @@ foreach (['cliente', 'camarero', 'cocinero', 'gerente'] as $rol) {
 
 $opcionesActivo = '';
 foreach (['1' => 'Activo', '0' => 'Inactivo'] as $valor => $texto) {
-    $selected = $datos['activo'] === $valor ? ' selected' : '';
-    $opcionesActivo .= '<option value="' . h($valor) . '"' . $selected . '>' . h($texto) . '</option>';
+    $valorStr = (string) $valor;
+    $selected = $datos['activo'] === $valorStr ? ' selected' : '';
+    $opcionesActivo .= '<option value="' . h($valorStr) . '"' . $selected . '>' . h($texto) . '</option>';
 }
 
 $titulo = $esEdicion ? 'Editar usuario' : 'Crear usuario';
