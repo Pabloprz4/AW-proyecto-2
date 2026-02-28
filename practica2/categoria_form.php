@@ -98,4 +98,6 @@ $contenido = str_replace(
 );
 
 
+
 render_page($titulo, $contenido);
+
