@@ -49,3 +49,4 @@ HTML;
 $contenido = str_replace('{nuevo}', h(base_url('categoria_form.php')), $contenido);
 
 render_page('Gestión de Categorías', $contenido);
+
