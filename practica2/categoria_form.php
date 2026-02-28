@@ -97,4 +97,5 @@ $contenido = str_replace(
     $contenido
 );
 
+
 render_page($titulo, $contenido);
