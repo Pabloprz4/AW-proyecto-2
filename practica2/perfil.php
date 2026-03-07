@@ -141,6 +141,46 @@ if ($errores) {
     $listaErrores = '<ul>' . $items . '</ul>';
 }
 
+$pedidosActivosPerfil = PedidoRepository::forCliente((int) $usuario['id'], ['en_preparacion', 'cocinando', 'listo_cocina', 'terminado']);
+$filasPedidosPerfil = '';
+foreach ($pedidosActivosPerfil as $pedido) {
+    $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+    $filasPedidosPerfil .= '<tr>' .
+        '<td>' . (int) $pedido['id'] . '</td>' .
+        '<td>' . h($numeroVisible) . '</td>' .
+        '<td>' . h(PedidoRepository::estadoLabel((string) $pedido['estado'])) . '</td>' .
+        '<td>' . h(money_eur((float) $pedido['total'])) . '</td>' .
+        '<td><a href="' . h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])) . '">Detalle</a></td>' .
+        '</tr>';
+}
+
+if ($filasPedidosPerfil === '') {
+    $filasPedidosPerfil = '<tr><td colspan="5">No tienes pedidos en seguimiento.</td></tr>';
+}
+
+$bloquePedidosPerfil = <<<HTML
+<section>
+  <h2>Pedidos en seguimiento</h2>
+  <table border="1" cellpadding="6">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Numero dia</th>
+        <th>Estado</th>
+        <th>Total</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {$filasPedidosPerfil}
+    </tbody>
+  </table>
+  <p><a href="{mis_pedidos}">Ver historico completo de pedidos</a></p>
+</section>
+HTML;
+
+$bloquePedidosPerfil = str_replace('{mis_pedidos}', h(base_url('mis_pedidos.php')), $bloquePedidosPerfil);
+
 $contenido = <<<HTML
 <section>
   <h2>Mi perfil</h2>
@@ -186,6 +226,8 @@ $contenido = <<<HTML
     <button type="submit">Quitar avatar</button>
   </form>
 </section>
+
+{$bloquePedidosPerfil}
 HTML;
 
 $contenido = str_replace(

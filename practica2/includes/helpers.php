@@ -90,6 +90,66 @@ function has_role(string $requiredRole, ?string $currentRole = null): bool
     return role_level((string) $role) >= role_level($requiredRole);
 }
 
+function money_eur(float $amount): string
+{
+    return number_format($amount, 2, '.', '') . ' EUR';
+}
+
+function pedido_cart_get(): array
+{
+    $cart = $_SESSION['pedido_cart'] ?? null;
+    if (!is_array($cart)) {
+        return [
+            'tipo' => 'local',
+            'items' => [],
+        ];
+    }
+
+    $tipo = ((string) ($cart['tipo'] ?? 'local')) === 'llevar' ? 'llevar' : 'local';
+    $items = [];
+
+    if (isset($cart['items']) && is_array($cart['items'])) {
+        foreach ($cart['items'] as $productoId => $cantidad) {
+            $id = (int) $productoId;
+            $qty = (int) $cantidad;
+            if ($id > 0 && $qty > 0) {
+                $items[(string) $id] = $qty;
+            }
+        }
+    }
+
+    return [
+        'tipo' => $tipo,
+        'items' => $items,
+    ];
+}
+
+function pedido_cart_save(array $cart): void
+{
+    $tipo = ((string) ($cart['tipo'] ?? 'local')) === 'llevar' ? 'llevar' : 'local';
+    $items = [];
+
+    if (isset($cart['items']) && is_array($cart['items'])) {
+        foreach ($cart['items'] as $productoId => $cantidad) {
+            $id = (int) $productoId;
+            $qty = (int) $cantidad;
+            if ($id > 0 && $qty > 0) {
+                $items[(string) $id] = min($qty, 50);
+            }
+        }
+    }
+
+    $_SESSION['pedido_cart'] = [
+        'tipo' => $tipo,
+        'items' => $items,
+    ];
+}
+
+function pedido_cart_clear(): void
+{
+    unset($_SESSION['pedido_cart']);
+}
+
 function render_page(string $title, string $content): void
 {
     $tituloPagina = $title;

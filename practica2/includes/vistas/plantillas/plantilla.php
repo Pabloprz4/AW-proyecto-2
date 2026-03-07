@@ -18,8 +18,16 @@ $flashError = flash_get('error');
         <li><a href="<?= h(base_url('index.php')) ?>">Inicio</a></li>
         <?php if ($usuarioSesion): ?>
           <li><a href="<?= h(base_url('perfil.php')) ?>">Perfil</a></li>
+          <li><a href="<?= h(base_url('pedido_nuevo.php')) ?>">Nuevo pedido</a></li>
+          <li><a href="<?= h(base_url('mis_pedidos.php')) ?>">Mis pedidos</a></li>
+          <?php if (has_role('camarero', (string) $usuarioSesion['rol'])): ?>
+            <li><a href="<?= h(base_url('pedidos_camarero.php')) ?>">Panel camarero</a></li>
+          <?php endif; ?>
           <?php if (has_role('gerente', (string) $usuarioSesion['rol'])): ?>
             <li><a href="<?= h(base_url('usuarios.php')) ?>">Usuarios</a></li>
+            <li><a href="<?= h(base_url('categorias.php')) ?>">Categorias</a></li>
+            <li><a href="<?= h(base_url('productos.php')) ?>">Productos</a></li>
+            <li><a href="<?= h(base_url('pedidos.php')) ?>">Pedidos</a></li>
           <?php endif; ?>
           <li>
             <form method="post" action="<?= h(base_url('logout.php')) ?>">
@@ -34,7 +42,10 @@ $flashError = flash_get('error');
       </ul>
     </nav>
     <?php if ($usuarioSesion): ?>
-      <p>Sesión iniciada como <strong><?= h((string) $usuarioSesion['nombre_usuario']) ?></strong> (rol: <?= h((string) $usuarioSesion['rol']) ?>)</p>
+      <?php if (!empty($usuarioSesion['avatar'])): ?>
+        <p><img src="<?= h(base_url((string) $usuarioSesion['avatar'])) ?>" alt="Avatar usuario" width="50"></p>
+      <?php endif; ?>
+      <p>Sesion iniciada como <strong><?= h((string) $usuarioSesion['nombre_usuario']) ?></strong> (rol: <?= h((string) $usuarioSesion['rol']) ?>)</p>
     <?php endif; ?>
   </header>
 
