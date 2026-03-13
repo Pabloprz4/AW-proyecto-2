@@ -7,12 +7,14 @@ $gerente = require_role('gerente');
 
 $estadoFiltro = trim((string) ($_GET['estado'] ?? ''));
 $estadosValidos = [
+    'nuevo',
     'recibido',
     'en_preparacion',
     'cocinando',
     'listo_cocina',
     'terminado',
     'entregado',
+    'cancelado',
 ];
 
 $pedidos = in_array($estadoFiltro, $estadosValidos, true)

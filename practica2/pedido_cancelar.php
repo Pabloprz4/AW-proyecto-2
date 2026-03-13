@@ -16,11 +16,11 @@ if ($id <= 0) {
     redirect_to('mis_pedidos.php');
 }
 
-$ok = PedidoRepository::cancelarRecibido($id, (int) $usuario['id']);
+$ok = PedidoRepository::cancelarAbierto($id, (int) $usuario['id']);
 if ($ok) {
     flash_set('ok', 'Pedido cancelado correctamente.');
 } else {
-    flash_set('error', 'No se pudo cancelar el pedido (solo se pueden cancelar pedidos en estado Recibido).');
+    flash_set('error', 'No se pudo cancelar el pedido (solo se pueden cancelar pedidos en estado Nuevo o Recibido).');
 }
 
 redirect_to('mis_pedidos.php');

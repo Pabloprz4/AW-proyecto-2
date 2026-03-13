@@ -1,5 +1,11 @@
--- TABLA DE CATEGORÍAS
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+-- Importacion segura: borrar primero tablas hijas y luego padres.
+DROP TABLE IF EXISTS producto_imagenes;
+DROP TABLE IF EXISTS productos;
 DROP TABLE IF EXISTS categorias;
+
+-- TABLA DE CATEGORIAS
 CREATE TABLE categorias (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(50) NOT NULL,
@@ -9,7 +15,6 @@ CREATE TABLE categorias (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- TABLA DE PRODUCTOS
-DROP TABLE IF EXISTS productos;
 CREATE TABLE productos (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   categoria_id INT UNSIGNED NOT NULL,
@@ -18,8 +23,23 @@ CREATE TABLE productos (
   precio DECIMAL(10, 2) NOT NULL,
   iva DECIMAL(5, 2) NOT NULL DEFAULT 21.00,
   foto VARCHAR(255) DEFAULT NULL,
-  ofertado TINYINT(1) NOT NULL DEFAULT 1, -- 1 = Activo/Ofertado, 0 = No ofertado (borrado lógico)
+  disponible TINYINT(1) NOT NULL DEFAULT 1,
+  ofertado TINYINT(1) NOT NULL DEFAULT 1, -- 1 = Ofertado, 0 = Retirado de carta
   creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- TABLA DE IMAGENES DE PRODUCTO (1..N por producto)
+CREATE TABLE producto_imagenes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT UNSIGNED NOT NULL,
+  ruta VARCHAR(255) NOT NULL,
+  orden INT UNSIGNED NOT NULL DEFAULT 0,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_producto_imagenes_producto (producto_id),
+  CONSTRAINT fk_producto_imagenes_producto
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;

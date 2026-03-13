@@ -6,10 +6,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $camarero = require_role('camarero');
 $pedidos = PedidoRepository::forCamareroPanel();
 
-$avatarHtml = '';
-if (!empty($camarero['avatar'])) {
-    $avatarHtml = '<img src="' . h(base_url((string) $camarero['avatar'])) . '" alt="Avatar camarero" width="80">';
-}
+$avatarHtml = '<img src="' . h(avatar_web_url(isset($camarero['avatar']) ? (string) $camarero['avatar'] : null)) . '" alt="Avatar camarero" width="80">';
 
 $filas = '';
 foreach ($pedidos as $pedido) {

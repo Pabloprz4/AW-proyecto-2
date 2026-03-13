@@ -95,6 +95,67 @@ function money_eur(float $amount): string
     return number_format($amount, 2, '.', '') . ' EUR';
 }
 
+function predefined_avatars(): array
+{
+    if (!defined('PREDEFINED_AVATARS') || !is_array(PREDEFINED_AVATARS)) {
+        return [];
+    }
+
+    $clean = [];
+    foreach (PREDEFINED_AVATARS as $avatar) {
+        $path = trim((string) $avatar);
+        if ($path !== '') {
+            $clean[] = $path;
+        }
+    }
+
+    return array_values(array_unique($clean));
+}
+
+function default_avatar_path(): string
+{
+    $configured = defined('DEFAULT_AVATAR') ? trim((string) DEFAULT_AVATAR) : '';
+    if ($configured !== '') {
+        return $configured;
+    }
+
+    $predefined = predefined_avatars();
+    if ($predefined !== []) {
+        return (string) $predefined[0];
+    }
+
+    return 'uploads/avatars/predef_default.svg';
+}
+
+function is_predefined_avatar(string $avatarPath): bool
+{
+    return in_array($avatarPath, predefined_avatars(), true);
+}
+
+function is_upload_avatar(string $avatarPath): bool
+{
+    return str_starts_with($avatarPath, 'uploads/avatars/');
+}
+
+function resolve_avatar_path(?string $avatarPath): string
+{
+    $avatar = trim((string) $avatarPath);
+    if ($avatar === '') {
+        return default_avatar_path();
+    }
+
+    if (is_predefined_avatar($avatar) || is_upload_avatar($avatar)) {
+        return $avatar;
+    }
+
+    return default_avatar_path();
+}
+
+function avatar_web_url(?string $avatarPath): string
+{
+    return base_url(resolve_avatar_path($avatarPath));
+}
+
 function pedido_cart_get(): array
 {
     $cart = $_SESSION['pedido_cart'] ?? null;

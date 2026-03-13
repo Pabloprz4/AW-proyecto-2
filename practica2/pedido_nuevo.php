@@ -27,7 +27,11 @@ if (is_post()) {
             $cantidad = max(1, min(50, $cantidad));
 
             $producto = $productoId > 0 ? ProductoRepository::findById($productoId) : null;
-            if (!$producto || (int) $producto['ofertado'] !== 1) {
+            if (
+                !$producto
+                || (int) $producto['ofertado'] !== 1
+                || (int) ($producto['disponible'] ?? 0) !== 1
+            ) {
                 $errores[] = 'El producto no esta disponible.';
             } else {
                 $key = (string) $productoId;
@@ -98,7 +102,11 @@ foreach ($cart['items'] as $productoId => $cantidad) {
     }
 
     $producto = ProductoRepository::findById($id);
-    if (!$producto || (int) $producto['ofertado'] !== 1) {
+    if (
+        !$producto
+        || (int) $producto['ofertado'] !== 1
+        || (int) ($producto['disponible'] ?? 0) !== 1
+    ) {
         $idsInvalidos[] = (string) $id;
         continue;
     }
@@ -123,7 +131,7 @@ if ($idsInvalidos !== []) {
         unset($cart['items'][$idInvalido]);
     }
     pedido_cart_save($cart);
-    $errores[] = 'Se han retirado del carrito productos que ya no estan ofertados.';
+    $errores[] = 'Se han retirado del carrito productos que ya no estan ofertados o disponibles.';
 }
 
 $listaErrores = '';

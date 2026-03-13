@@ -11,7 +11,7 @@ $pedidosHistorico = [];
 
 foreach ($pedidos as $pedido) {
     $estado = (string) $pedido['estado'];
-    if (in_array($estado, ['en_preparacion', 'cocinando', 'listo_cocina', 'terminado'], true)) {
+    if (in_array($estado, ['nuevo', 'recibido', 'en_preparacion', 'cocinando', 'listo_cocina', 'terminado'], true)) {
         $pedidosActivos[] = $pedido;
     } else {
         $pedidosHistorico[] = $pedido;
@@ -30,7 +30,7 @@ $renderFilas = static function (array $lista): string {
         $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
 
         $acciones = '<a href="' . h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])) . '">Detalle</a>';
-        if ((string) $pedido['estado'] === 'recibido') {
+        if (in_array((string) $pedido['estado'], ['nuevo', 'recibido'], true)) {
             $acciones .=
                 '<form method="post" action="' . h(base_url('pedido_cancelar.php')) . '" style="display:inline;">' .
                 csrf_field() .
@@ -64,7 +64,7 @@ $contenido = <<<HTML
 
 <section>
   <h3>Pedidos en seguimiento</h3>
-  <p>Estados relevantes: En preparacion, Cocinando, Listo cocina, Terminado.</p>
+  <p>Estados relevantes: Nuevo, Recibido, En preparacion, Cocinando, Listo cocina, Terminado.</p>
   <table border="1" cellpadding="6">
     <thead>
       <tr>

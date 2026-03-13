@@ -4,12 +4,14 @@ declare(strict_types=1);
 final class PedidoRepository
 {
     private const ESTADOS = [
+        'nuevo',
         'recibido',
         'en_preparacion',
         'cocinando',
         'listo_cocina',
         'terminado',
         'entregado',
+        'cancelado',
     ];
 
     private const TIPOS = ['local', 'llevar'];
@@ -36,7 +38,7 @@ final class PedidoRepository
             $lineas = [];
             $total = 0.0;
             $stmtProducto = $pdo->prepare(
-                'SELECT id, nombre, precio, iva, ofertado FROM productos WHERE id = :id LIMIT 1'
+                'SELECT id, nombre, precio, iva, ofertado, disponible FROM productos WHERE id = :id LIMIT 1'
             );
 
             foreach ($items as $item) {
@@ -50,7 +52,11 @@ final class PedidoRepository
                 $stmtProducto->execute(['id' => $productoId]);
                 $producto = $stmtProducto->fetch();
 
-                if (!$producto || (int) $producto['ofertado'] !== 1) {
+                if (
+                    !$producto
+                    || (int) $producto['ofertado'] !== 1
+                    || (int) ($producto['disponible'] ?? 0) !== 1
+                ) {
                     throw new RuntimeException('Uno de los productos ya no esta disponible.');
                 }
 
@@ -272,10 +278,10 @@ final class PedidoRepository
         return $stmt->rowCount() === 1;
     }
 
-    public static function cancelarRecibido(int $pedidoId, ?int $clienteId = null): bool
+    public static function cancelarAbierto(int $pedidoId, ?int $clienteId = null): bool
     {
         $params = ['id' => $pedidoId];
-        $sql = "DELETE FROM pedidos WHERE id = :id AND estado = 'recibido'";
+        $sql = "UPDATE pedidos SET estado = 'cancelado' WHERE id = :id AND estado IN ('nuevo', 'recibido')";
 
         if ($clienteId !== null) {
             $sql .= ' AND cliente_id = :cliente_id';
@@ -290,12 +296,14 @@ final class PedidoRepository
     public static function estadoLabel(string $estado): string
     {
         return match ($estado) {
+            'nuevo' => 'Nuevo',
             'recibido' => 'Recibido',
             'en_preparacion' => 'En preparacion',
             'cocinando' => 'Cocinando',
             'listo_cocina' => 'Listo cocina',
             'terminado' => 'Terminado',
             'entregado' => 'Entregado',
+            'cancelado' => 'Cancelado',
             default => 'Desconocido',
         };
     }
@@ -330,7 +338,7 @@ final class PedidoRepository
 
     private static function normalizeEstado(string $estado): string
     {
-        return in_array($estado, self::ESTADOS, true) ? $estado : 'recibido';
+        return in_array($estado, self::ESTADOS, true) ? $estado : 'nuevo';
     }
 
     private static function buildEstadoWhere(?array $estados, array &$params, string $alias = ''): string

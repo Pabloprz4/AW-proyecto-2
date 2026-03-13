@@ -23,7 +23,11 @@ foreach ($cart['items'] as $productoId => $cantidad) {
     }
 
     $producto = ProductoRepository::findById($id);
-    if (!$producto || (int) $producto['ofertado'] !== 1) {
+    if (
+        !$producto
+        || (int) $producto['ofertado'] !== 1
+        || (int) ($producto['disponible'] ?? 0) !== 1
+    ) {
         $idsInvalidos[] = (string) $id;
         continue;
     }

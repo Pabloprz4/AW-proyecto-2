@@ -22,14 +22,21 @@ foreach ($productos as $producto) {
     }
 
     $precioConFormato = number_format((float) $producto['precio'], 2) . ' €';
+    $rutaFoto = trim((string) ($producto['foto'] ?? ''));
+    $fotoHtml = $rutaFoto !== ''
+        ? '<img src="' . h(base_url($rutaFoto)) . '" alt="Foto" width="50">'
+        : 'Sin imagen';
+    $imagenesCount = (int) ($producto['imagenes_count'] ?? 0);
 
     $filas .= '<tr>' .
         '<td>' . (int) $producto['id'] . '</td>' .
-        '<td><img src="' . h(base_url((string) $producto['foto'])) . '" alt="Foto" width="50"></td>' .
+        '<td>' . $fotoHtml . '</td>' .
         '<td>' . h((string) $producto['nombre']) . '</td>' .
         '<td>' . h((string) $producto['categoria_nombre']) . '</td>' .
         '<td>' . h($precioConFormato) . '</td>' .
+        '<td>' . ((int) $producto['disponible'] === 1 ? 'Si' : 'No') . '</td>' .
         '<td>' . ((int) $producto['ofertado'] === 1 ? 'Sí' : 'No') . '</td>' .
+        '<td>' . $imagenesCount . '</td>' .
         '<td>' . $acciones . '</td>' .
         '</tr>';
 }
@@ -46,7 +53,9 @@ $contenido = <<<HTML
         <th>Nombre</th>
         <th>Categoría</th>
         <th>Precio</th>
+        <th>Disponible</th>
         <th>Ofertado</th>
+        <th>Imagenes</th>
         <th>Acciones</th>
       </tr>
     </thead>

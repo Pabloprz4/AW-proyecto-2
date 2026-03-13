@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $usuarioSesion = require_login();
 $usuario = UsuarioRepository::findById((int) $usuarioSesion['id']);
+$avataresPredefinidos = predefined_avatars();
 
 if (!$usuario) {
     auth_logout();
@@ -24,7 +25,32 @@ if (is_post()) {
     if (!$errores && $accion === 'quitar_avatar') {
         UsuarioRepository::setAvatar((int) $usuario['id'], null);
         $_SESSION['auth_user']['avatar'] = null;
-        flash_set('ok', 'Avatar eliminado.');
+        flash_set('ok', 'Avatar personalizado eliminado. Se usa el avatar por defecto.');
+        redirect_to('perfil.php');
+    }
+
+    if (!$errores && $accion === 'seleccionar_avatar') {
+        $avatarSeleccionado = trim((string) ($_POST['avatar_predefinido'] ?? ''));
+        $nuevoAvatar = null;
+
+        if ($avatarSeleccionado !== '__default__') {
+            if (!is_predefined_avatar($avatarSeleccionado)) {
+                $errores[] = 'El avatar predefinido seleccionado no es valido.';
+            } else {
+                $nuevoAvatar = $avatarSeleccionado;
+            }
+        }
+
+        if (!$errores) {
+            UsuarioRepository::setAvatar((int) $usuario['id'], $nuevoAvatar);
+            $_SESSION['auth_user']['avatar'] = $nuevoAvatar;
+            flash_set('ok', $nuevoAvatar === null
+                ? 'Avatar por defecto aplicado.'
+                : 'Avatar predefinido aplicado.'
+            );
+        } else {
+            flash_set('error', (string) $errores[0]);
+        }
         redirect_to('perfil.php');
     }
 
@@ -127,10 +153,49 @@ if (is_post()) {
 }
 
 $usuario = UsuarioRepository::findById((int) $usuarioSesion['id']) ?: $usuario;
-$avatarHtml = '';
-if (!empty($usuario['avatar'])) {
-    $avatarHtml = '<p><img src="' . h(base_url((string) $usuario['avatar'])) . '" alt="Avatar" width="120"></p>';
+$avatarActualPath = trim((string) ($usuario['avatar'] ?? ''));
+$avatarActualEsPredefinido = $avatarActualPath !== '' && is_predefined_avatar($avatarActualPath);
+$avatarHtml = '<p><img src="' . h(avatar_web_url($avatarActualPath !== '' ? $avatarActualPath : null)) . '" alt="Avatar" width="120"></p>';
+$avatarEstado = $avatarActualPath === ''
+    ? 'Avatar por defecto'
+    : ($avatarActualEsPredefinido ? 'Avatar predefinido' : 'Avatar personalizado');
+$avatarHtml .= '<p>Estado actual: <strong>' . h($avatarEstado) . '</strong></p>';
+
+$avatarSelectorOpciones = '';
+$selectedDefault = $avatarActualPath === '' ? ' checked' : '';
+$avatarSelectorOpciones .=
+    '<label>' .
+    '<input type="radio" name="avatar_predefinido" value="__default__"' . $selectedDefault . '> ' .
+    'Usar avatar por defecto' .
+    '</label> ' .
+    '<img src="' . h(avatar_web_url(null)) . '" alt="Avatar por defecto" width="90">';
+
+foreach ($avataresPredefinidos as $avatarPath) {
+    $selected = $avatarActualPath === $avatarPath ? ' checked' : '';
+    $avatarSelectorOpciones .=
+        '<br><label>' .
+        '<input type="radio" name="avatar_predefinido" value="' . h($avatarPath) . '"' . $selected . '> ' .
+        h(basename($avatarPath)) .
+        '</label> ' .
+        '<img src="' . h(avatar_web_url($avatarPath)) . '" alt="Avatar predefinido" width="90">';
 }
+
+$bloqueAvataresPredefinidos = <<<HTML
+  <form method="post" action="{action}">
+    {csrf}
+    <input type="hidden" name="accion" value="seleccionar_avatar">
+    <fieldset>
+      <legend>Seleccionar avatar predefinido</legend>
+      {$avatarSelectorOpciones}
+    </fieldset>
+    <p><button type="submit">Aplicar avatar seleccionado</button></p>
+  </form>
+HTML;
+$bloqueAvataresPredefinidos = str_replace(
+    ['{action}', '{csrf}'],
+    [h(base_url('perfil.php')), csrf_field()],
+    $bloqueAvataresPredefinidos
+);
 
 $listaErrores = '';
 if ($errores) {
@@ -186,6 +251,7 @@ $contenido = <<<HTML
   <h2>Mi perfil</h2>
   {$listaErrores}
   {$avatarHtml}
+  {$bloqueAvataresPredefinidos}
   <form method="post" action="{action}" enctype="multipart/form-data">
     {csrf}
     <input type="hidden" name="accion" value="guardar">

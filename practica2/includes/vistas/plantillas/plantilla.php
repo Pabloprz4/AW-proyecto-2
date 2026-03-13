@@ -42,9 +42,7 @@ $flashError = flash_get('error');
       </ul>
     </nav>
     <?php if ($usuarioSesion): ?>
-      <?php if (!empty($usuarioSesion['avatar'])): ?>
-        <p><img src="<?= h(base_url((string) $usuarioSesion['avatar'])) ?>" alt="Avatar usuario" width="50"></p>
-      <?php endif; ?>
+      <p><img src="<?= h(avatar_web_url(isset($usuarioSesion['avatar']) ? (string) $usuarioSesion['avatar'] : null)) ?>" alt="Avatar usuario" width="50"></p>
       <p>Sesion iniciada como <strong><?= h((string) $usuarioSesion['nombre_usuario']) ?></strong> (rol: <?= h((string) $usuarioSesion['rol']) ?>)</p>
     <?php endif; ?>
   </header>

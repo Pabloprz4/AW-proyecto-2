@@ -11,7 +11,7 @@ VALUES
 
 INSERT INTO pedido_lineas (pedido_id, producto_id, producto_nombre, precio_base, iva, precio_final_unitario, cantidad, subtotal)
 VALUES
-(1, 1, 'Coca-Cola', 2.50, 21.00, 3.03, 2, 6.06),
+(1, 1, 'Nuka Cola', 2.50, 21.00, 3.03, 2, 6.06),
 (1, 2, 'Hamburguesa FDI', 12.00, 10.00, 13.20, 1, 13.20),
-(2, 1, 'Coca-Cola', 2.50, 21.00, 3.03, 2, 6.06),
+(2, 1, 'Nuka Cola', 2.50, 21.00, 3.03, 2, 6.06),
 (3, 2, 'Hamburguesa FDI', 12.00, 10.00, 13.20, 1, 13.20);

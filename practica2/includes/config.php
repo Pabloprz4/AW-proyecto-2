@@ -42,6 +42,19 @@ if (!defined('UPLOAD_AVATARS_WEB')) {
     define('UPLOAD_AVATARS_WEB', $prefix . '/uploads/avatars');
 }
 
+if (!defined('PREDEFINED_AVATARS')) {
+    define('PREDEFINED_AVATARS', [
+        'uploads/avatars/predef_default.svg',
+        'uploads/avatars/predef_orange.svg',
+        'uploads/avatars/predef_blue.svg',
+        'uploads/avatars/predef_green.svg',
+    ]);
+}
+
+if (!defined('DEFAULT_AVATAR')) {
+    define('DEFAULT_AVATAR', 'uploads/avatars/predef_default.svg');
+}
+
 ini_set('default_charset', 'UTF-8');
 setlocale(LC_ALL, 'es_ES.UTF.8');
 date_default_timezone_set('Europe/Madrid');

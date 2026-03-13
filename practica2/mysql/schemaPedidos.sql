@@ -14,7 +14,7 @@ CREATE TABLE pedidos (
   numero_dia INT UNSIGNED NOT NULL,
   fecha_dia DATE NOT NULL,
   fecha_pedido DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  estado ENUM('recibido','en_preparacion','cocinando','listo_cocina','terminado','entregado') NOT NULL DEFAULT 'recibido',
+  estado ENUM('nuevo','recibido','en_preparacion','cocinando','listo_cocina','terminado','entregado','cancelado') NOT NULL DEFAULT 'nuevo',
   tipo ENUM('local','llevar') NOT NULL,
   metodo_pago ENUM('tarjeta','camarero') NOT NULL,
   total DECIMAL(10,2) NOT NULL,
