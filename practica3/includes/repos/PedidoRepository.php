@@ -164,10 +164,13 @@ final class PedidoRepository
             'SELECT p.*, 
                     u.nombre_usuario AS cliente_usuario,
                     u.nombre AS cliente_nombre,
-                    c.nombre_usuario AS camarero_usuario
+                    c.nombre_usuario AS camarero_usuario,
+                    co.nombre_usuario AS cocinero_usuario,
+                    co.avatar AS cocinero_avatar
              FROM pedidos p
              INNER JOIN usuarios u ON u.id = p.cliente_id
              LEFT JOIN usuarios c ON c.id = p.camarero_id
+             LEFT JOIN usuarios co ON co.id = p.cocinero_id
              WHERE p.id = :id
              LIMIT 1'
         );
@@ -208,10 +211,13 @@ final class PedidoRepository
 
         $sql = 'SELECT p.*, 
                        u.nombre_usuario AS cliente_usuario, 
-                       c.nombre_usuario AS camarero_usuario
+                       c.nombre_usuario AS camarero_usuario,
+                       co.nombre_usuario AS cocinero_usuario,
+                       co.avatar AS cocinero_avatar
                 FROM pedidos p
                 INNER JOIN usuarios u ON u.id = p.cliente_id
                 LEFT JOIN usuarios c ON c.id = p.camarero_id
+                LEFT JOIN usuarios co ON co.id = p.cocinero_id
                 WHERE 1=1' . $whereEstado . '
                 ORDER BY p.fecha_pedido DESC, p.id DESC';
 
