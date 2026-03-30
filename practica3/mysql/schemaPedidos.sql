@@ -20,14 +20,17 @@ CREATE TABLE pedidos (
   total DECIMAL(10,2) NOT NULL,
   cliente_id INT UNSIGNED NOT NULL,
   camarero_id INT UNSIGNED DEFAULT NULL,
+  cocinero_id INT UNSIGNED DEFAULT NULL, 
   creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_pedidos_numero_dia (fecha_dia, numero_dia),
   KEY idx_pedidos_cliente (cliente_id),
   KEY idx_pedidos_estado (estado),
   KEY idx_pedidos_camarero (camarero_id),
+  KEY idx_pedidos_cocinero (cocinero_id), 
   CONSTRAINT fk_pedidos_cliente FOREIGN KEY (cliente_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
-  CONSTRAINT fk_pedidos_camarero FOREIGN KEY (camarero_id) REFERENCES usuarios(id) ON DELETE SET NULL
+  CONSTRAINT fk_pedidos_camarero FOREIGN KEY (camarero_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_pedidos_cocinero FOREIGN KEY (cocinero_id) REFERENCES usuarios(id) ON DELETE SET NULL 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE pedido_lineas (
@@ -40,6 +43,7 @@ CREATE TABLE pedido_lineas (
   precio_final_unitario DECIMAL(10,2) NOT NULL,
   cantidad INT UNSIGNED NOT NULL,
   subtotal DECIMAL(10,2) NOT NULL,
+  preparado TINYINT(1) NOT NULL DEFAULT 0, 
   creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_pedido_lineas_pedido (pedido_id),
   KEY idx_pedido_lineas_producto (producto_id),
