@@ -299,6 +299,68 @@ final class PedidoRepository
         return $stmt->rowCount() === 1;
     }
 
+
+    public static function forCocineroPanel(): array
+    {
+        $stmt = db()->prepare(
+            "SELECT p.*, u.nombre_usuario AS cliente_usuario
+             FROM pedidos p
+             INNER JOIN usuarios u ON u.id = p.cliente_id
+             WHERE p.estado IN ('en_preparacion', 'cocinando')
+             ORDER BY p.fecha_pedido ASC, p.id ASC"
+        );
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public static function tomarParaCocinar(int $pedidoId, int $cocineroId): bool
+    {
+        $stmt = db()->prepare(
+            "UPDATE pedidos 
+             SET estado = 'cocinando', cocinero_id = :cocinero_id
+             WHERE id = :id AND estado = 'en_preparacion'"
+        );
+        $stmt->execute([
+            'id' => $pedidoId,
+            'cocinero_id' => $cocineroId,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    public static function marcarLineaPreparada(int $lineaId, int $pedidoId): bool
+    {
+        $stmt = db()->prepare(
+            "UPDATE pedido_lineas 
+             SET preparado = 1 
+             WHERE id = :id AND pedido_id = :pedido_id"
+        );
+        $stmt->execute([
+            'id' => $lineaId,
+            'pedido_id' => $pedidoId,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+
+
+    
+    public static function marcarListoCocina(int $pedidoId, int $cocineroId): bool
+    {
+        $stmt = db()->prepare(
+            "UPDATE pedidos 
+             SET estado = 'listo_cocina'
+             WHERE id = :id AND estado = 'cocinando' AND cocinero_id = :cocinero_id"
+        );
+        $stmt->execute([
+            'id' => $pedidoId,
+            'cocinero_id' => $cocineroId,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
     public static function estadoLabel(string $estado): string
     {
         return match ($estado) {
