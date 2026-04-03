@@ -48,6 +48,11 @@ if (has_role('camarero', (string) $usuario['rol'])) {
     $bloqueCamarero .= '<li><a href="' . h(base_url('pedidos_camarero.php')) . '">Panel de camarero (funcionalidad 2)</a></li>';
 }
 
+$bloqueCocinero = '';
+if (has_role('cocinero', (string) $usuario['rol'])) {
+    $bloqueCocinero .= '<li><a href="' . h(base_url('cocina.php')) . '">Panel de cocina (funcionalidad 3)</a></li>';
+}
+
 $bloqueGerente = '';
 if (has_role('gerente', (string) $usuario['rol'])) {
     $bloqueGerente .= '<li><a href="' . h(base_url('usuarios.php')) . '">Gestion de usuarios (funcionalidad 0)</a></li>';
@@ -66,6 +71,7 @@ $contenidoPrincipal = <<<HTML
     <li><a href="{perfil}">Mi perfil</a></li>
     {$bloqueCliente}
     {$bloqueCamarero}
+    {$bloqueCocinero}
     {$bloqueGerente}
   </ul>
 </section>
@@ -76,6 +82,7 @@ $contenidoPrincipal = <<<HTML
     <li>Funcionalidad 0: gestion de usuarios y perfil.</li>
     <li>Funcionalidad 1: gestion de categorias y productos.</li>
     <li>Funcionalidad 2: gestion de pedidos (cliente, camarero y gerente).</li>
+    <li>Funcionalidad 3: preparacion en cocina (cocinero).</li>
   </ul>
 </section>
 HTML;
