@@ -57,7 +57,7 @@ foreach ($lineas as $linea) {
         '<td>' . h(money_eur((float) $linea['precio_final_unitario'])) . '</td>' .
         '<td>' . h(money_eur((float) $linea['subtotal'])) . '</td>' .
         '<td>' . ($preparado ? 'Si' : 'No') . '</td>' .
-        '<td>' . $accionLinea . '</td>' .
+        '<td><div class="cocina-acciones">' . $accionLinea . '</div></td>' .
         '</tr>';
 }
 
@@ -91,16 +91,16 @@ elseif ($puedePreparar && $totalLineas > 0 && $lineasPreparadas === $totalLineas
         '</form>';
 }
 elseif ($puedePreparar) {
-    $accionesPedido = '<span>Debes marcar todas las lineas como preparadas para finalizar.</span>';
+    $accionesPedido = '<span class="cocina-estado-note">Debes marcar todas las lineas como preparadas para finalizar.</span>';
 }
 elseif ($estado === 'listo_cocina') {
-    $accionesPedido = '<span>Pedido ya listo para camarero.</span>';
+    $accionesPedido = '<span class="cocina-estado-note">Pedido ya listo para camarero.</span>';
 }
 
 $contenido = <<<HTML
-<section>
+<section class="cocina-panel">
   <h2>Detalle de cocina</h2>
-  <ul>
+  <ul class="cocina-resumen">
     <li><strong>ID:</strong> {id}</li>
     <li><strong>Numero del dia:</strong> {numero_visible}</li>
     <li><strong>Estado:</strong> {estado}</li>
@@ -110,12 +110,12 @@ $contenido = <<<HTML
     <li><strong>Cocinero:</strong> {asignacion}</li>
     <li><strong>Progreso lineas:</strong> {lineas_preparadas}/{lineas_totales}</li>
   </ul>
-  <p>{acciones_pedido}</p>
+  <div class="cocina-acciones">{acciones_pedido}</div>
 </section>
 
-<section>
+<section class="cocina-panel">
   <h3>Lineas del pedido</h3>
-  <table border="1" cellpadding="6">
+  <table class="tabla-cocina" border="1" cellpadding="6">
     <thead>
       <tr>
         <th>Producto</th>

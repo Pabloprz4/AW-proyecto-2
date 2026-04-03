@@ -13,7 +13,8 @@ foreach ($pedidos as $pedido) {
     $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
     $asignado = (int) ($pedido['cocinero_id'] ?? 0);
 
-    $acciones = '<a href="' . h(base_url('cocina_detalle.php?id=' . $pedidoId)) . '">Detalle cocina</a>';
+    $acciones = '<div class="cocina-acciones">';
+    $acciones .= '<a class="boton" href="' . h(base_url('cocina_detalle.php?id=' . $pedidoId)) . '">Detalle cocina</a>';
 
     if ($estado === 'en_preparacion') {
         $acciones .=
@@ -26,11 +27,12 @@ foreach ($pedidos as $pedido) {
 
     if ($estado === 'cocinando') {
         if ($asignado === (int) $cocinero['id']) {
-            $acciones .= ' <span>(lo estas preparando)</span>';
+            $acciones .= '<span class="cocina-estado-note">(lo estas preparando)</span>';
         } elseif ($asignado > 0) {
-            $acciones .= ' <span>(asignado a otro cocinero)</span>';
+            $acciones .= '<span class="cocina-estado-note">(asignado a otro cocinero)</span>';
         }
     }
+    $acciones .= '</div>';
 
     $filas .= '<tr>' .
         '<td>' . $pedidoId . '</td>' .
@@ -47,15 +49,15 @@ if ($filas === '') {
     $filas = '<tr><td colspan="7">No hay pedidos pendientes de cocina.</td></tr>';
 }
 
-$avatarHtml = '<img src="' . h(avatar_web_url(isset($cocinero['avatar']) ? (string) $cocinero['avatar'] : null)) . '" alt="Avatar cocinero" width="80">';
+$avatarHtml = '<img class="avatar-cocina" src="' . h(avatar_web_url(isset($cocinero['avatar']) ? (string) $cocinero['avatar'] : null)) . '" alt="Avatar cocinero" width="80">';
 
 $contenido = <<<HTML
-<section>
+<section class="cocina-panel">
   <h2>Panel de cocina</h2>
   <p>Usuario: <strong>{usuario}</strong></p>
   <p>{$avatarHtml}</p>
-  <p>Pedidos visibles: En preparacion y Cocinando.</p>
-  <table border="1" cellpadding="6">
+  <p class="cocina-info">Pedidos visibles: En preparacion y Cocinando.</p>
+  <table class="tabla-cocina" border="1" cellpadding="6">
     <thead>
       <tr>
         <th>ID</th>
@@ -81,4 +83,3 @@ $contenido = str_replace(
 );
 
 render_page('Panel de cocina', $contenido);
-
