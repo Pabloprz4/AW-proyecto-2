@@ -4,7 +4,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
 
 $camarero = require_role('camarero');
-$pedidos = PedidoRepository::forCamareroPanel();
+$estadosPanel = [
+    'recibido',
+    'en_preparacion',
+    'cocinando',
+    'listo_cocina',
+    'terminado',
+];
+$pedidos = PedidoRepository::all($estadosPanel);
 
 $avatarHtml = '<img src="' . h(avatar_web_url(isset($camarero['avatar']) ? (string) $camarero['avatar'] : null)) . '" alt="Avatar camarero" width="80">';
 
@@ -12,6 +19,15 @@ $filas = '';
 foreach ($pedidos as $pedido) {
     $estado = (string) $pedido['estado'];
     $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+    $cocineroUsuario = trim((string) ($pedido['cocinero_usuario'] ?? ''));
+    $cocineroHtml = 'Sin asignar';
+    if ($cocineroUsuario !== '') {
+        $avatar = avatar_web_url((string) ($pedido['cocinero_avatar'] ?? null));
+        $cocineroHtml = '<div class="cocina-acciones">' .
+            '<img class="avatar-cocina" src="' . h($avatar) . '" alt="Avatar cocinero" width="40" height="40">' .
+            '<span>' . h($cocineroUsuario) . '</span>' .
+            '</div>';
+    }
 
     $acciones = '<a href="' . h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])) . '">Detalle</a> ';
     if ($estado === 'recibido') {
@@ -22,6 +38,12 @@ foreach ($pedidos as $pedido) {
             '<input type="hidden" name="accion" value="cobrar">' .
             '<button type="submit">Cobrar -> En preparacion</button>' .
             '</form>';
+    }
+    elseif ($estado === 'en_preparacion') {
+        $acciones .= '<span class="cocina-estado-note">Esperando a que cocina tome el pedido.</span>';
+    }
+    elseif ($estado === 'cocinando') {
+        $acciones .= '<span class="cocina-estado-note">Pedido en cocina.</span>';
     }
     elseif ($estado === 'listo_cocina') {
         $acciones .=
@@ -46,6 +68,7 @@ foreach ($pedidos as $pedido) {
         '<td>' . (int) $pedido['id'] . '</td>' .
         '<td>' . h($numeroVisible) . '</td>' .
         '<td>' . h((string) $pedido['cliente_usuario']) . '</td>' .
+        '<td>' . $cocineroHtml . '</td>' .
         '<td>' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</td>' .
         '<td>' . h(PedidoRepository::estadoLabel($estado)) . '</td>' .
         '<td>' . h(money_eur((float) $pedido['total'])) . '</td>' .
@@ -54,7 +77,7 @@ foreach ($pedidos as $pedido) {
 }
 
 if ($filas === '') {
-    $filas = '<tr><td colspan="7">No hay pedidos pendientes para camarero.</td></tr>';
+    $filas = '<tr><td colspan="8">No hay pedidos pendientes para camarero.</td></tr>';
 }
 
 $contenido = <<<HTML
@@ -64,9 +87,10 @@ $contenido = <<<HTML
   <p>{$avatarHtml}</p>
   <p>
     Acciones disponibles:
-    <br>1) Cobrar pedidos Recibidos
-    <br>2) Marcar Terminado pedidos en Listo cocina
-    <br>3) Entregar pedidos Terminados
+    <br>1) Cobrar pedidos en estado Recibido (pasan a En preparacion)
+    <br>2) Seguimiento de estados de cocina: En preparacion y Cocinando
+    <br>3) Preparar entrega de pedidos en Listo cocina (pasan a Terminado)
+    <br>4) Entregar pedidos en estado Terminado
   </p>
   <table border="1" cellpadding="6">
     <thead>
@@ -74,6 +98,7 @@ $contenido = <<<HTML
         <th>ID</th>
         <th>Numero dia</th>
         <th>Cliente</th>
+        <th>Cocinero</th>
         <th>Tipo</th>
         <th>Estado</th>
         <th>Total</th>
