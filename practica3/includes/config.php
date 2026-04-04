@@ -3,17 +3,17 @@
 /**
  * Parámetros de conexión a la BD
  */
-define('BD_HOST', 'localhost');
-define('BD_PORT', '3306');
-define('BD_NAME', 'awp3_beta');
-define('BD_USER', 'root');
-define('BD_PASS', '');
+define('BD_HOST', getenv('BD_HOST') ?: 'vm009.db.swarm.test');
+define('BD_PORT', getenv('BD_PORT') ?: '3306');
+define('BD_NAME', getenv('BD_NAME') ?: 'awp3_beta');
+define('BD_USER', getenv('BD_USER') ?: 'awp3_app');
+define('BD_PASS', getenv('BD_PASS') ?: 'Awp3App!123');
 
 /**
  * Parámetros de configuración utilizados para generar las URLs y las rutas a ficheros en la aplicación
  */
 define('RAIZ_APP', __DIR__);
-define('RUTA_APP', '/practica3');
+define('RUTA_APP', getenv('APP_BASE_PATH') ?: '/practica3');
 define('RUTA_IMGS', RUTA_APP . '/img/');
 define('RUTA_CSS', RUTA_APP . '/css/');
 define('RUTA_JS', RUTA_APP . '/js/');
