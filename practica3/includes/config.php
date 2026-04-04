@@ -5,7 +5,7 @@
  */
 define('BD_HOST', getenv('BD_HOST') ?: 'vm009.db.swarm.test');
 define('BD_PORT', getenv('BD_PORT') ?: '3306');
-define('BD_NAME', getenv('BD_NAME') ?: 'awp3_beta');
+define('BD_NAME', getenv('BD_NAME') ?: 'awp3_prod');
 define('BD_USER', getenv('BD_USER') ?: 'awp3_app');
 define('BD_PASS', getenv('BD_PASS') ?: 'Awp3App!123');
 
