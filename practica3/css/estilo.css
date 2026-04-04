@@ -1,18 +1,26 @@
 body {
 	background-color: #CDCDCD;
+	margin: 0;
 }
 
 div#contenedor {
-	width: 1132px;
+	width: min(96vw, 1360px);
 	margin: auto;
 	border: 1px solid black;
 	background-color: #aaaaaa;
 	margin-top: 30px;
+	display: grid;
+	grid-template-columns: 170px minmax(0, 1fr) 170px;
+	grid-template-areas:
+		"header header header"
+		"nav main aside"
+		"footer footer footer";
 }
 
 header {
+	grid-area: header;
 	padding: 30px;
-	height: 100px;
+	min-height: 100px;
 	background-color: #303030;
 	color: white;
 }
@@ -31,10 +39,10 @@ header a:hover {
 
 
 nav {
+	grid-area: nav;
 	padding: 10px;
-	float: left;
-	width: 170px;
-	height: 400px;
+	width: auto;
+	height: auto;
 	background-color: #dddddd;
 }
 
@@ -51,23 +59,26 @@ nav a:hover {
 
 
 aside {
+	grid-area: aside;
 	padding: 10px;
-	float: right;
-	width: 170px;
-	height: 400px;
+	width: auto;
+	height: auto;
 	background-color: #dddddd;
+	border-left: 1px solid #8b8b8b;
 }
 
 main {
+	grid-area: main;
 	padding: 10px;
-	float: left;
 	min-height: 600px;
-	width: 732px;
+	width: auto;
 	background-color: white;
+	min-width: 0;
+	overflow-x: auto;
 }
 
 footer {
-	clear: both;
+	grid-area: footer;
 	padding: 20px;
 	background-color: #303030;
 	color: white;
@@ -77,6 +88,17 @@ footer {
 div.saludo {
 	width: 100%;
 	text-align: right;
+}
+
+main table {
+	width: max-content;
+	min-width: 100%;
+	border-collapse: collapse;
+}
+
+main img {
+	max-width: 100%;
+	height: auto;
 }
 
 fieldset {
@@ -247,5 +269,73 @@ a.deshabilitado {
 
 	.cocina-acciones {
 		align-items: flex-start;
+	}
+}
+
+/* Tablet apaisada (camarero/cocinero): prioriza ancho del contenido central */
+@media (min-width: 900px) and (max-width: 1220px) and (orientation: landscape) {
+	div#contenedor {
+		width: min(98vw, 1220px);
+		grid-template-columns: 170px minmax(0, 1fr);
+		grid-template-areas:
+			"header header"
+			"nav main"
+			"aside aside"
+			"footer footer";
+	}
+
+	aside {
+		border-left: none;
+		border-top: 1px solid #8b8b8b;
+	}
+
+	main {
+		min-height: 520px;
+	}
+}
+
+/* Movil vertical (cliente): layout en una sola columna */
+@media (max-width: 899px) {
+	div#contenedor {
+		width: 100%;
+		margin-top: 0;
+		border-left: none;
+		border-right: none;
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			"header"
+			"nav"
+			"main"
+			"aside"
+			"footer";
+	}
+
+	header {
+		padding: 16px;
+		min-height: auto;
+	}
+
+	div.saludo {
+		text-align: left;
+		margin-top: 10px;
+	}
+
+	nav,
+	aside,
+	main {
+		padding: 12px;
+	}
+
+	aside {
+		border-left: none;
+		border-top: 1px solid #8b8b8b;
+	}
+
+	main {
+		min-height: auto;
+	}
+
+	.mensaje {
+		width: 92%;
 	}
 }
