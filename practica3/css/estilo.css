@@ -189,3 +189,63 @@ button, a.boton {
 a.deshabilitado {
 	color: rgba(16, 16, 16, 0.3);
 }
+
+.cocina-panel {
+	margin-bottom: 1.2rem;
+}
+
+.avatar-cocina {
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	border: 1px solid #b8b8b8;
+	background: #eceff3;
+	display: inline-block;
+}
+
+.cocina-info {
+	margin: 0.8rem 0;
+}
+
+.tabla-cocina {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.tabla-cocina th,
+.tabla-cocina td {
+	padding: 0.45rem;
+	vertical-align: top;
+}
+
+.cocina-acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	align-items: center;
+}
+
+.cocina-acciones form {
+	margin: 0;
+}
+
+.cocina-resumen {
+	padding-left: 1.2rem;
+	margin: 0.2rem 0 0.8rem 0;
+}
+
+.cocina-estado-note {
+	font-size: 0.92em;
+	color: #505050;
+}
+
+@media (max-width: 930px) {
+	.tabla-cocina th,
+	.tabla-cocina td {
+		font-size: 0.95em;
+	}
+
+	.cocina-acciones {
+		align-items: flex-start;
+	}
+}
