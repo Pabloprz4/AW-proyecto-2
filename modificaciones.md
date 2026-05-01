@@ -9,6 +9,7 @@
 - Crear clases comunes: botones, tablas, alertas, formularios, badges de estado, acciones inline y grids/cards.
 - Quitar `border`, `cellpadding`, `style="display:inline"` y `onclick` de las paginas.
 - Dejar las tablas solo donde tengan sentido; para paneles operativos usar tarjetas/listas visuales.
+- Añadir responsive básico con Grid/Flexbox y media queries.
 
 ## Daniel
 
