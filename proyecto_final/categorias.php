@@ -12,10 +12,10 @@ foreach ($categorias as $categoria) {
     $acciones = '<a href="' . h(base_url('categoria_form.php?id=' . (int) $categoria['id'])) . '">Editar</a> ';
 
     $acciones .=
-        '<form method="post" action="' . h(base_url('categoria_borrar.php')) . '" style="display:inline;">' .
+        '<form method="post" action="' . h(base_url('categoria_borrar.php')) . '" class="inline">' .
         csrf_field() .
         '<input type="hidden" name="id" value="' . (int) $categoria['id'] . '">' .
-        '<button type="submit" onclick="return confirm(\'¿Seguro que quieres borrar esta categoría?\');">Borrar</button>' .
+        '<button type="submit">Borrar</button>' .
         '</form>';
 
     $filas .= '<tr>' .
@@ -30,7 +30,7 @@ $contenido = <<<HTML
 <section>
   <h2>Gestión de Categorías</h2>
   <p><a href="{nuevo}">Crear nueva categoría</a></p>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>
@@ -49,4 +49,3 @@ HTML;
 $contenido = str_replace('{nuevo}', h(base_url('categoria_form.php')), $contenido);
 
 render_page('Gestión de Categorías', $contenido);
-

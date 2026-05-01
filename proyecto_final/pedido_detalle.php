@@ -118,7 +118,7 @@ $contenido = <<<HTML
 
 <section>
   <h3>Lineas del pedido</h3>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>Producto</th>

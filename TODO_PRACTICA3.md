@@ -16,8 +16,8 @@
 ## CSS real y HTML valido
 
 - [x] Crear clases comunes: botones, tablas, alertas, formularios, badges de estado, acciones inline y grids/cards.
-- [ ] Quitar `border`, `cellpadding`, `style="display:inline"` y `onclick` de las paginas.
-- [ ] Dejar las tablas solo donde tengan sentido; para paneles operativos usar tarjetas/listas visuales.
+- [x] Quitar `border`, `cellpadding`, `style="display:inline"` y `onclick` de las paginas.
+- [x] Dejar las tablas solo donde tengan sentido; para paneles operativos usar tarjetas/listas visuales.
 - [ ] Anadir responsive basico con Grid/Flexbox y media queries.
 
 ## Paneles de cocina y camarero

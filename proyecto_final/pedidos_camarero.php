@@ -15,7 +15,7 @@ $pedidos = PedidoRepository::all($estadosPanel);
 
 $avatarHtml = '<img src="' . h(avatar_web_url(isset($camarero['avatar']) ? (string) $camarero['avatar'] : null)) . '" alt="Avatar camarero" width="80">';
 
-$filas = '';
+$tarjetas = '';
 foreach ($pedidos as $pedido) {
     $estado = (string) $pedido['estado'];
     $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
@@ -66,20 +66,19 @@ foreach ($pedidos as $pedido) {
     }
     $acciones .= '</div>';
 
-    $filas .= '<tr>' .
-        '<td>' . (int) $pedido['id'] . '</td>' .
-        '<td>' . h($numeroVisible) . '</td>' .
-        '<td>' . h((string) $pedido['cliente_usuario']) . '</td>' .
-        '<td>' . $cocineroHtml . '</td>' .
-        '<td>' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</td>' .
-        '<td>' . $badgeEstado . '</td>' .
-        '<td>' . h(money_eur((float) $pedido['total'])) . '</td>' .
-        '<td>' . $acciones . '</td>' .
-        '</tr>';
+    $tarjetas .= '<article class="card">' .
+        '<h3>Pedido #' . (int) $pedido['id'] . ' · ' . h($numeroVisible) . '</h3>' .
+        '<p><strong>Estado:</strong> ' . $badgeEstado . '</p>' .
+        '<p><strong>Cliente:</strong> ' . h((string) $pedido['cliente_usuario']) . '</p>' .
+        '<p><strong>Cocinero:</strong> ' . $cocineroHtml . '</p>' .
+        '<p><strong>Tipo:</strong> ' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</p>' .
+        '<p><strong>Total:</strong> ' . h(money_eur((float) $pedido['total'])) . '</p>' .
+        $acciones .
+        '</article>';
 }
 
-if ($filas === '') {
-    $filas = '<tr><td colspan="8">No hay pedidos pendientes para camarero.</td></tr>';
+if ($tarjetas === '') {
+    $tarjetas = '<p>No hay pedidos pendientes para camarero.</p>';
 }
 
 $contenido = <<<HTML
@@ -94,23 +93,7 @@ $contenido = <<<HTML
     <br>3) Preparar entrega de pedidos en Listo cocina (pasan a Terminado)
     <br>4) Entregar pedidos en estado Terminado
   </p>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Numero dia</th>
-        <th>Cliente</th>
-        <th>Cocinero</th>
-        <th>Tipo</th>
-        <th>Estado</th>
-        <th>Total</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {$filas}
-    </tbody>
-  </table>
+  <div class="grid">{$tarjetas}</div>
 </section>
 HTML;
 

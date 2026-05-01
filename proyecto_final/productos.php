@@ -14,7 +14,7 @@ foreach ($productos as $producto) {
     // boton para dejar de ofertar 
     if ((int) $producto['ofertado'] === 1) {
         $acciones .= 
-            '<form method="post" action="' . h(base_url('producto_borrar.php')) . '" style="display:inline;">' .
+            '<form method="post" action="' . h(base_url('producto_borrar.php')) . '" class="inline">' .
             csrf_field() .
             '<input type="hidden" name="id" value="' . (int) $producto['id'] . '">' .
             '<button type="submit">Quitar oferta</button>' .
@@ -45,7 +45,7 @@ $contenido = <<<HTML
 <section>
   <h2>Gestión de Productos</h2>
   <p><a href="{nuevo}">Crear nuevo producto</a></p>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>

@@ -32,7 +32,7 @@ $renderFilas = static function (array $lista): string {
         $acciones = '<a href="' . h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])) . '">Detalle</a>';
         if (in_array((string) $pedido['estado'], ['nuevo', 'recibido'], true)) {
             $acciones .=
-                '<form method="post" action="' . h(base_url('pedido_cancelar.php')) . '" style="display:inline;">' .
+                '<form method="post" action="' . h(base_url('pedido_cancelar.php')) . '" class="inline">' .
                 csrf_field() .
                 '<input type="hidden" name="id" value="' . (int) $pedido['id'] . '">' .
                 '<button type="submit">Cancelar</button>' .
@@ -65,7 +65,7 @@ $contenido = <<<HTML
 <section>
   <h3>Pedidos en seguimiento</h3>
   <p>Estados relevantes: Nuevo, Recibido, En preparacion, Cocinando, Listo cocina, Terminado.</p>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>
@@ -85,7 +85,7 @@ $contenido = <<<HTML
 
 <section>
   <h3>Historico de pedidos</h3>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>
