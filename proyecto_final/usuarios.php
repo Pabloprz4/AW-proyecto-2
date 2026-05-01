@@ -35,7 +35,7 @@ $contenido = <<<HTML
 <section>
   <h2>Gestion de usuarios</h2>
   <p><a href="{nuevo}">Crear nuevo usuario</a></p>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>

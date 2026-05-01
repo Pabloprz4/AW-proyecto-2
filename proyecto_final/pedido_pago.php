@@ -140,7 +140,7 @@ $contenido = <<<HTML
   <h2>Pago del pedido</h2>
   {$listaErrores}
   <p>Tipo de pedido: <strong>{$tipoLabel}</strong></p>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>Producto</th>

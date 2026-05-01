@@ -6,14 +6,15 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $cocinero = require_role('cocinero');
 $pedidos = PedidoRepository::forCocineroPanel();
 
-$filas = '';
+$tarjetas = '';
 foreach ($pedidos as $pedido) {
     $pedidoId = (int) $pedido['id'];
     $estado = (string) $pedido['estado'];
     $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
     $asignado = (int) ($pedido['cocinero_id'] ?? 0);
 
-    $acciones = '<div class="cocina-acciones">';
+    $badgeEstado = '<span class="badge badge-estado-' . h($estado) . '">' . h(PedidoRepository::estadoLabel($estado)) . '</span>';
+    $acciones = '<div class="actions-inline">';
     $acciones .= '<a class="boton" href="' . h(base_url('cocina_detalle.php?id=' . $pedidoId)) . '">Detalle cocina</a>';
 
     if ($estado === 'en_preparacion') {
@@ -21,7 +22,7 @@ foreach ($pedidos as $pedido) {
             '<form method="post" action="' . h(base_url('cocina_tomar.php')) . '" class="inline">' .
             csrf_field() .
             '<input type="hidden" name="id" value="' . $pedidoId . '">' .
-            '<button type="submit">Tomar pedido</button>' .
+            '<button class="btn btn-primary" type="submit">Tomar pedido</button>' .
             '</form>';
     }
 
@@ -34,19 +35,18 @@ foreach ($pedidos as $pedido) {
     }
     $acciones .= '</div>';
 
-    $filas .= '<tr>' .
-        '<td>' . $pedidoId . '</td>' .
-        '<td>' . h($numeroVisible) . '</td>' .
-        '<td>' . h((string) $pedido['cliente_usuario']) . '</td>' .
-        '<td>' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</td>' .
-        '<td>' . h(PedidoRepository::estadoLabel($estado)) . '</td>' .
-        '<td>' . h(money_eur((float) $pedido['total'])) . '</td>' .
-        '<td>' . $acciones . '</td>' .
-        '</tr>';
+    $tarjetas .= '<article class="card">' .
+        '<h3>Pedido #' . $pedidoId . ' · ' . h($numeroVisible) . '</h3>' .
+        '<p><strong>Estado:</strong> ' . $badgeEstado . '</p>' .
+        '<p><strong>Cliente:</strong> ' . h((string) $pedido['cliente_usuario']) . '</p>' .
+        '<p><strong>Tipo:</strong> ' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</p>' .
+        '<p><strong>Total:</strong> ' . h(money_eur((float) $pedido['total'])) . '</p>' .
+        $acciones .
+        '</article>';
 }
 
-if ($filas === '') {
-    $filas = '<tr><td colspan="7">No hay pedidos pendientes de cocina.</td></tr>';
+if ($tarjetas === '') {
+    $tarjetas = '<p>No hay pedidos pendientes de cocina.</p>';
 }
 
 $avatarHtml = '<img class="avatar-cocina" src="' . h(avatar_web_url(isset($cocinero['avatar']) ? (string) $cocinero['avatar'] : null)) . '" alt="Avatar cocinero" width="80">';
@@ -57,22 +57,7 @@ $contenido = <<<HTML
   <p>Usuario: <strong>{usuario}</strong></p>
   <p>{$avatarHtml}</p>
   <p class="cocina-info">Pedidos visibles: En preparacion y Cocinando.</p>
-  <table class="tabla-cocina" border="1" cellpadding="6">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Numero dia</th>
-        <th>Cliente</th>
-        <th>Tipo</th>
-        <th>Estado</th>
-        <th>Total</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {$filas}
-    </tbody>
-  </table>
+  <div class="grid">{$tarjetas}</div>
 </section>
 HTML;
 

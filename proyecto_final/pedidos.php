@@ -73,7 +73,7 @@ $contenido = <<<HTML
 </section>
 
 <section>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>

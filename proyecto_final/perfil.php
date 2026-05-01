@@ -226,7 +226,7 @@ if ($filasPedidosPerfil === '') {
 $bloquePedidosPerfil = <<<HTML
 <section>
   <h2>Pedidos en seguimiento</h2>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>
