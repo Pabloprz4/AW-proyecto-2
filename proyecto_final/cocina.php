@@ -13,7 +13,8 @@ foreach ($pedidos as $pedido) {
     $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
     $asignado = (int) ($pedido['cocinero_id'] ?? 0);
 
-    $acciones = '<div class="cocina-acciones">';
+    $badgeEstado = '<span class="badge badge-estado-' . h($estado) . '">' . h(PedidoRepository::estadoLabel($estado)) . '</span>';
+    $acciones = '<div class="actions-inline">';
     $acciones .= '<a class="boton" href="' . h(base_url('cocina_detalle.php?id=' . $pedidoId)) . '">Detalle cocina</a>';
 
     if ($estado === 'en_preparacion') {
@@ -21,7 +22,7 @@ foreach ($pedidos as $pedido) {
             '<form method="post" action="' . h(base_url('cocina_tomar.php')) . '" class="inline">' .
             csrf_field() .
             '<input type="hidden" name="id" value="' . $pedidoId . '">' .
-            '<button type="submit">Tomar pedido</button>' .
+            '<button class="btn btn-primary" type="submit">Tomar pedido</button>' .
             '</form>';
     }
 
@@ -39,7 +40,7 @@ foreach ($pedidos as $pedido) {
         '<td>' . h($numeroVisible) . '</td>' .
         '<td>' . h((string) $pedido['cliente_usuario']) . '</td>' .
         '<td>' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</td>' .
-        '<td>' . h(PedidoRepository::estadoLabel($estado)) . '</td>' .
+        '<td>' . $badgeEstado . '</td>' .
         '<td>' . h(money_eur((float) $pedido['total'])) . '</td>' .
         '<td>' . $acciones . '</td>' .
         '</tr>';
@@ -57,7 +58,7 @@ $contenido = <<<HTML
   <p>Usuario: <strong>{usuario}</strong></p>
   <p>{$avatarHtml}</p>
   <p class="cocina-info">Pedidos visibles: En preparacion y Cocinando.</p>
-  <table class="tabla-cocina" border="1" cellpadding="6">
+  <table class="table tabla-cocina">
     <thead>
       <tr>
         <th>ID</th>

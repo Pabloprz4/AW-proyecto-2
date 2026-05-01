@@ -6,6 +6,7 @@
 - Unificar mensajes flash para que `flash_set('ok'/'error')` se vea siempre en la plantilla
 - Cambiar el menu lateral a roles exactos
 - Bloquear al cocinero el acceso backend al panel camarero
+- Crear clases comunes: botones, tablas, alertas, formularios, badges de estado, acciones inline y grids/cards.
 
 ## Daniel
 

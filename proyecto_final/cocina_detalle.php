@@ -47,7 +47,7 @@ foreach ($lineas as $linea) {
             csrf_field() .
             '<input type="hidden" name="pedido_id" value="' . (int) $pedido['id'] . '">' .
             '<input type="hidden" name="linea_id" value="' . (int) $linea['id'] . '">' .
-            '<button type="submit">Marcar preparada</button>' .
+            '<button class="btn btn-primary" type="submit">Marcar preparada</button>' .
             '</form>';
     }
 
@@ -79,7 +79,7 @@ if ($estado === 'en_preparacion' && $pedidoCocineroId === 0) {
         '<form method="post" action="' . h(base_url('cocina_tomar.php')) . '" class="inline">' .
         csrf_field() .
         '<input type="hidden" name="id" value="' . (int) $pedido['id'] . '">' .
-        '<button type="submit">Tomar pedido</button>' .
+        '<button class="btn btn-primary" type="submit">Tomar pedido</button>' .
         '</form>';
 }
 elseif ($puedePreparar && $totalLineas > 0 && $lineasPreparadas === $totalLineas) {
@@ -87,7 +87,7 @@ elseif ($puedePreparar && $totalLineas > 0 && $lineasPreparadas === $totalLineas
         '<form method="post" action="' . h(base_url('cocina_finalizar.php')) . '" class="inline">' .
         csrf_field() .
         '<input type="hidden" name="pedido_id" value="' . (int) $pedido['id'] . '">' .
-        '<button type="submit">Finalizar cocina -> Listo cocina</button>' .
+        '<button class="btn btn-primary" type="submit">Finalizar cocina -> Listo cocina</button>' .
         '</form>';
 }
 elseif ($puedePreparar) {
@@ -115,7 +115,7 @@ $contenido = <<<HTML
 
 <section class="cocina-panel">
   <h3>Lineas del pedido</h3>
-  <table class="tabla-cocina" border="1" cellpadding="6">
+  <table class="table tabla-cocina">
     <thead>
       <tr>
         <th>Producto</th>

@@ -140,7 +140,7 @@ if ($errores) {
     foreach ($errores as $error) {
         $items .= '<li>' . h($error) . '</li>';
     }
-    $listaErrores = '<ul>' . $items . '</ul>';
+    $listaErrores = '<div class="alert alert-error"><ul>' . $items . '</ul></div>';
 }
 
 $bloquesCategorias = '';
@@ -161,8 +161,8 @@ foreach ($porCategoria as $categoriaNombre => $productosCategoria) {
             csrf_field() .
             '<input type="hidden" name="accion" value="add_item">' .
             '<input type="hidden" name="producto_id" value="' . (int) $producto['id'] . '">' .
-            '<input type="number" name="cantidad" min="1" max="50" value="1" required>' .
-            '<button type="submit">Anadir</button>' .
+            '<input class="form-control" type="number" name="cantidad" min="1" max="50" value="1" required>' .
+            '<button class="btn" type="submit">Anadir</button>' .
             '</form>' .
             '</td>' .
             '</tr>';
@@ -170,7 +170,7 @@ foreach ($porCategoria as $categoriaNombre => $productosCategoria) {
 
     $bloquesCategorias .= '<section>' .
         '<h3>' . h($categoriaNombre) . '</h3>' .
-        '<table border="1" cellpadding="6">' .
+        '<table class="table">' .
         '<thead><tr><th>Producto</th><th>Descripcion</th><th>Precio final</th><th>Accion</th></tr></thead>' .
         '<tbody>' . $filas . '</tbody>' .
         '</table>' .
@@ -181,7 +181,7 @@ $lineasHtml = '';
 foreach ($lineasCarrito as $linea) {
     $lineasHtml .= '<tr>' .
         '<td>' . h($linea['nombre']) . '</td>' .
-        '<td><input type="number" name="cantidades[' . (int) $linea['id'] . ']" min="0" max="50" value="' . (int) $linea['cantidad'] . '" required></td>' .
+        '<td><input class="form-control" type="number" name="cantidades[' . (int) $linea['id'] . ']" min="0" max="50" value="' . (int) $linea['cantidad'] . '" required></td>' .
         '<td>' . h(money_eur((float) $linea['precio_final'])) . '</td>' .
         '<td>' . h(money_eur((float) $linea['subtotal'])) . '</td>' .
         '</tr>';
@@ -194,22 +194,22 @@ if ($lineasCarrito === []) {
     $carritoHtml = '<form method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
         csrf_field() .
         '<input type="hidden" name="accion" value="update_cart">' .
-        '<table border="1" cellpadding="6">' .
+        '<table class="table">' .
         '<thead><tr><th>Producto</th><th>Cantidad (0 elimina)</th><th>Precio unidad</th><th>Subtotal</th></tr></thead>' .
         '<tbody>' . $lineasHtml . '</tbody>' .
         '</table>' .
         '<p><strong>Total: ' . h(money_eur($totalCarrito)) . '</strong></p>' .
-        '<p><button type="submit">Actualizar carrito</button></p>' .
+        '<p><button class="btn btn-primary" type="submit">Actualizar carrito</button></p>' .
         '</form>' .
         '<form method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
         csrf_field() .
         '<input type="hidden" name="accion" value="clear_cart">' .
-        '<button type="submit">Cancelar pedido (vaciar carrito)</button>' .
+        '<button class="btn btn-danger" type="submit">Cancelar pedido (vaciar carrito)</button>' .
         '</form>' .
         '<form method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
         csrf_field() .
         '<input type="hidden" name="accion" value="checkout">' .
-        '<button type="submit">Ir al pago</button>' .
+        '<button class="btn btn-primary" type="submit">Ir al pago</button>' .
         '</form>';
 }
 
@@ -224,11 +224,11 @@ $contenido = <<<HTML
     {csrf}
     <input type="hidden" name="accion" value="set_tipo">
     <label for="tipo">Tipo de pedido:</label>
-    <select id="tipo" name="tipo">
+    <select class="form-control" id="tipo" name="tipo">
       <option value="local" {sel_local}>Local</option>
       <option value="llevar" {sel_llevar}>Llevar</option>
     </select>
-    <button type="submit">Guardar tipo</button>
+    <button class="btn" type="submit">Guardar tipo</button>
   </form>
   <p>Tipo actual: <strong>{$tipoLabel}</strong></p>
 </section>

@@ -29,14 +29,15 @@ foreach ($pedidos as $pedido) {
             '</div>';
     }
 
-    $acciones = '<a href="' . h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])) . '">Detalle</a> ';
+    $badgeEstado = '<span class="badge badge-estado-' . h($estado) . '">' . h(PedidoRepository::estadoLabel($estado)) . '</span>';
+    $acciones = '<div class="actions-inline"><a class="btn" href="' . h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])) . '">Detalle</a>';
     if ($estado === 'recibido') {
         $acciones .=
-            '<form method="post" action="' . h(base_url('pedido_cambiar_estado.php')) . '" style="display:inline;">' .
+            '<form method="post" action="' . h(base_url('pedido_cambiar_estado.php')) . '" class="inline">' .
             csrf_field() .
             '<input type="hidden" name="id" value="' . (int) $pedido['id'] . '">' .
             '<input type="hidden" name="accion" value="cobrar">' .
-            '<button type="submit">Cobrar -> En preparacion</button>' .
+            '<button class="btn btn-primary" type="submit">Cobrar -> En preparacion</button>' .
             '</form>';
     }
     elseif ($estado === 'en_preparacion') {
@@ -47,22 +48,23 @@ foreach ($pedidos as $pedido) {
     }
     elseif ($estado === 'listo_cocina') {
         $acciones .=
-            '<form method="post" action="' . h(base_url('pedido_cambiar_estado.php')) . '" style="display:inline;">' .
+            '<form method="post" action="' . h(base_url('pedido_cambiar_estado.php')) . '" class="inline">' .
             csrf_field() .
             '<input type="hidden" name="id" value="' . (int) $pedido['id'] . '">' .
             '<input type="hidden" name="accion" value="preparar_entrega">' .
-            '<button type="submit">Preparar entrega -> Terminado</button>' .
+            '<button class="btn btn-primary" type="submit">Preparar entrega -> Terminado</button>' .
             '</form>';
     }
     elseif ($estado === 'terminado') {
         $acciones .=
-            '<form method="post" action="' . h(base_url('pedido_cambiar_estado.php')) . '" style="display:inline;">' .
+            '<form method="post" action="' . h(base_url('pedido_cambiar_estado.php')) . '" class="inline">' .
             csrf_field() .
             '<input type="hidden" name="id" value="' . (int) $pedido['id'] . '">' .
             '<input type="hidden" name="accion" value="entregar">' .
-            '<button type="submit">Entregar</button>' .
+            '<button class="btn btn-primary" type="submit">Entregar</button>' .
             '</form>';
     }
+    $acciones .= '</div>';
 
     $filas .= '<tr>' .
         '<td>' . (int) $pedido['id'] . '</td>' .
@@ -70,7 +72,7 @@ foreach ($pedidos as $pedido) {
         '<td>' . h((string) $pedido['cliente_usuario']) . '</td>' .
         '<td>' . $cocineroHtml . '</td>' .
         '<td>' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</td>' .
-        '<td>' . h(PedidoRepository::estadoLabel($estado)) . '</td>' .
+        '<td>' . $badgeEstado . '</td>' .
         '<td>' . h(money_eur((float) $pedido['total'])) . '</td>' .
         '<td>' . $acciones . '</td>' .
         '</tr>';
@@ -92,7 +94,7 @@ $contenido = <<<HTML
     <br>3) Preparar entrega de pedidos en Listo cocina (pasan a Terminado)
     <br>4) Entregar pedidos en estado Terminado
   </p>
-  <table border="1" cellpadding="6">
+  <table class="table">
     <thead>
       <tr>
         <th>ID</th>

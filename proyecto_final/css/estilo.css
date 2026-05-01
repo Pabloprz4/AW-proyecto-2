@@ -259,6 +259,140 @@ a.deshabilitado {
 	margin: 0;
 }
 
+/* Componentes comunes */
+.btn,
+button,
+a.boton {
+	display: inline-block;
+	border: 1px solid #1f2937;
+	background: #f3f4f6;
+	color: #111827;
+	padding: 0.35rem 0.65rem;
+	border-radius: 0.35rem;
+	font-size: 0.92rem;
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.btn:hover,
+button:hover,
+a.boton:hover {
+	background: #e5e7eb;
+}
+
+.btn.btn-primary {
+	background: #1d4ed8;
+	border-color: #1d4ed8;
+	color: #fff;
+}
+
+.btn.btn-primary:hover {
+	background: #1e40af;
+}
+
+.btn.btn-danger {
+	background: #b91c1c;
+	border-color: #991b1b;
+	color: #fff;
+}
+
+.table,
+.tabla-cocina {
+	width: 100%;
+	border-collapse: collapse;
+	background: #fff;
+}
+
+.table th,
+.table td,
+.tabla-cocina th,
+.tabla-cocina td {
+	border: 1px solid #d1d5db;
+	padding: 0.5rem;
+	vertical-align: top;
+}
+
+.table thead th,
+.tabla-cocina thead th {
+	background: #f3f4f6;
+}
+
+.alert {
+	border: 1px solid #cbd5e1;
+	background: #f8fafc;
+	padding: 0.75rem;
+	border-radius: 0.35rem;
+	margin: 0.75rem 0;
+}
+
+.alert-error {
+	background: #fef2f2;
+	border-color: #fecaca;
+}
+
+.alert-ok {
+	background: #f0fdf4;
+	border-color: #bbf7d0;
+}
+
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+	max-width: 100%;
+	padding: 0.4rem 0.45rem;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.3rem;
+}
+
+.form-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.65rem;
+	align-items: end;
+}
+
+.badge {
+	display: inline-block;
+	padding: 0.2rem 0.45rem;
+	border-radius: 999px;
+	font-size: 0.78rem;
+	background: #e5e7eb;
+	color: #111827;
+}
+
+.badge-estado-recibido { background: #e0f2fe; }
+.badge-estado-en_preparacion { background: #fef9c3; }
+.badge-estado-cocinando { background: #ffedd5; }
+.badge-estado-listo_cocina { background: #dcfce7; }
+.badge-estado-terminado { background: #dbeafe; }
+.badge-estado-entregado { background: #ede9fe; }
+.badge-estado-cancelado { background: #fee2e2; }
+
+.actions-inline {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	align-items: center;
+}
+
+.grid {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.card {
+	border: 1px solid #d1d5db;
+	border-radius: 0.45rem;
+	padding: 0.8rem;
+	background: #fff;
+}
+
 .cocina-resumen {
 	padding-left: 1.2rem;
 	margin: 0.2rem 0 0.8rem 0;
