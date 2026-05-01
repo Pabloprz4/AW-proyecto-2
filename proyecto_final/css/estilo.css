@@ -228,6 +228,14 @@ a.deshabilitado {
 	margin-bottom: 1.2rem;
 }
 
+.cocina-panel-header {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.9rem;
+	align-items: center;
+	margin-bottom: 1rem;
+}
+
 .avatar-cocina {
 	width: 80px;
 	height: 80px;
@@ -238,7 +246,7 @@ a.deshabilitado {
 }
 
 .cocina-info {
-	margin: 0.8rem 0;
+	margin: 0.25rem 0;
 }
 
 .tabla-cocina {
@@ -260,6 +268,330 @@ a.deshabilitado {
 }
 
 .cocina-acciones form {
+	margin: 0;
+}
+
+.cocina-grid {
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.cocina-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.8rem;
+	border-left: 5px solid #64748b;
+}
+
+.cocina-card-estado-en_preparacion {
+	border-left-color: #d97706;
+}
+
+.cocina-card-estado-cocinando {
+	border-left-color: #2563eb;
+}
+
+.cocina-card-estado-listo_cocina {
+	border-left-color: #16a34a;
+}
+
+.cocina-card-header {
+	display: flex;
+	gap: 0.8rem;
+	justify-content: space-between;
+	align-items: flex-start;
+}
+
+.cocina-card-label,
+.cocina-pedido-numero {
+	display: block;
+	color: #64748b;
+	font-size: 0.82rem;
+}
+
+.cocina-card-title {
+	margin: 0.1rem 0;
+	font-size: 1.45rem;
+	line-height: 1.1;
+}
+
+.cocina-meta {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.65rem;
+	margin: 0;
+}
+
+.cocina-meta-item {
+	margin: 0;
+	padding: 0.55rem;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.35rem;
+}
+
+.cocina-meta dt {
+	color: #64748b;
+	font-size: 0.78rem;
+	margin-bottom: 0.15rem;
+}
+
+.cocina-meta dd {
+	margin: 0;
+	font-weight: 700;
+}
+
+.cocina-total {
+	grid-column: 1 / -1;
+	background: #f0f9ff;
+	border-color: #bae6fd;
+}
+
+.cocina-total dd {
+	font-size: 1.35rem;
+}
+
+.cocina-card-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+	align-items: center;
+	margin-top: auto;
+	padding-top: 0.2rem;
+}
+
+.cocina-card-actions form {
+	margin: 0;
+}
+
+.cocina-empty {
+	grid-column: 1 / -1;
+}
+
+.avatar-cocina-lg {
+	width: 96px;
+	height: 96px;
+}
+
+.cocina-detalle-hero {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 220px;
+	gap: 1rem;
+	align-items: stretch;
+	border-left: 5px solid #64748b;
+}
+
+.cocina-detalle-hero.cocina-card-estado-en_preparacion {
+	border-left-color: #d97706;
+}
+
+.cocina-detalle-hero.cocina-card-estado-cocinando {
+	border-left-color: #2563eb;
+}
+
+.cocina-detalle-hero.cocina-card-estado-listo_cocina {
+	border-left-color: #16a34a;
+}
+
+.cocina-detalle-main {
+	display: flex;
+	flex-direction: column;
+	gap: 0.9rem;
+}
+
+.cocina-detalle-title {
+	margin: 0.1rem 0;
+	font-size: 2rem;
+	line-height: 1.05;
+}
+
+.cocina-detalle-meta {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cocina-cocinero-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.8rem;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.45rem;
+	text-align: center;
+}
+
+.cocina-progreso-card {
+	margin-bottom: 1.2rem;
+}
+
+.cocina-progreso-header {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.8rem;
+	align-items: center;
+	margin-bottom: 0.65rem;
+}
+
+.cocina-progreso-numero {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: #1d4ed8;
+}
+
+.cocina-progress {
+	width: 100%;
+	height: 1rem;
+	margin-bottom: 0.85rem;
+}
+
+.cocina-lineas-grid {
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.cocina-linea-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.cocina-linea-header {
+	display: flex;
+	gap: 0.75rem;
+	align-items: flex-start;
+	justify-content: space-between;
+}
+
+.cocina-linea-header h4 {
+	margin: 0;
+	font-size: 1.05rem;
+}
+
+.cocina-linea-meta {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cocina-card-actions-lg {
+	gap: 0.6rem;
+}
+
+.btn.btn-lg {
+	padding: 0.65rem 0.9rem;
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.badge-linea-preparada {
+	background: #dcfce7;
+}
+
+.badge-linea-pendiente {
+	background: #fee2e2;
+}
+
+.badge-accion-ok {
+	background: #dcfce7;
+	color: #14532d;
+}
+
+.badge-accion-pendiente {
+	background: #fef9c3;
+	color: #713f12;
+}
+
+.badge-accion-progreso {
+	background: #dbeafe;
+	color: #1e3a8a;
+}
+
+.badge-accion-bloqueada {
+	background: #fee2e2;
+	color: #7f1d1d;
+}
+
+.camarero-panel {
+	margin-bottom: 1.2rem;
+}
+
+.camarero-board {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 1rem;
+	align-items: start;
+}
+
+.camarero-flow {
+	min-width: 0;
+}
+
+.camarero-flow-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 0.8rem;
+	padding: 0 0 0.45rem;
+	margin-bottom: 0.7rem;
+	border-bottom: 3px solid #64748b;
+}
+
+.camarero-flow-header h3 {
+	margin: 0.1rem 0 0;
+}
+
+.camarero-flow-cobrar .camarero-flow-header {
+	border-bottom-color: #0ea5e9;
+}
+
+.camarero-flow-esperando_cocina .camarero-flow-header {
+	border-bottom-color: #d97706;
+}
+
+.camarero-flow-preparar_entrega .camarero-flow-header {
+	border-bottom-color: #16a34a;
+}
+
+.camarero-flow-entregar .camarero-flow-header {
+	border-bottom-color: #7c3aed;
+}
+
+.camarero-flow-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.8rem;
+}
+
+.camarero-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.8rem;
+	border-left: 5px solid #64748b;
+}
+
+.camarero-card-estado-recibido {
+	border-left-color: #0ea5e9;
+}
+
+.camarero-card-estado-en_preparacion {
+	border-left-color: #d97706;
+}
+
+.camarero-card-estado-cocinando {
+	border-left-color: #2563eb;
+}
+
+.camarero-card-estado-listo_cocina {
+	border-left-color: #16a34a;
+}
+
+.camarero-card-estado-terminado {
+	border-left-color: #7c3aed;
+}
+
+.camarero-meta {
+	grid-template-columns: 1fr;
+}
+
+.camarero-empty {
 	margin: 0;
 }
 
@@ -507,6 +839,7 @@ textarea {
 	}
 
 	.actions-inline,
+	.cocina-card-actions,
 	.form-row {
 		flex-direction: column;
 		align-items: stretch;
@@ -520,6 +853,8 @@ textarea {
 	.actions-inline .btn,
 	.actions-inline button,
 	.actions-inline a.boton,
+	.cocina-card-actions .btn,
+	.cocina-card-actions button,
 	.form-row .btn,
 	.form-row button {
 		width: 100%;
@@ -551,5 +886,20 @@ textarea {
 	.avatar-cocina {
 		width: 64px;
 		height: 64px;
+	}
+
+	.avatar-cocina-lg {
+		width: 80px;
+		height: 80px;
+	}
+
+	.cocina-detalle-hero {
+		grid-template-columns: 1fr;
+	}
+
+	.cocina-detalle-meta,
+	.cocina-linea-meta,
+	.cocina-meta {
+		grid-template-columns: 1fr;
 	}
 }

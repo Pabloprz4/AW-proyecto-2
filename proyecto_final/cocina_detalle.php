@@ -29,7 +29,7 @@ $pedidoCocineroId = (int) ($pedido['cocinero_id'] ?? 0);
 $esCocineroAsignado = $pedidoCocineroId > 0 && $pedidoCocineroId === (int) $cocinero['id'];
 $puedePreparar = $estado === 'cocinando' && $esCocineroAsignado;
 
-$filas = '';
+$lineasHtml = '';
 $totalLineas = 0;
 $lineasPreparadas = 0;
 
@@ -47,31 +47,60 @@ foreach ($lineas as $linea) {
             csrf_field() .
             '<input type="hidden" name="pedido_id" value="' . (int) $pedido['id'] . '">' .
             '<input type="hidden" name="linea_id" value="' . (int) $linea['id'] . '">' .
-            '<button class="btn btn-primary" type="submit">Marcar preparada</button>' .
+            '<button class="btn btn-primary btn-lg" type="submit">Marcar preparada</button>' .
             '</form>';
+    } elseif ($preparado) {
+        $accionLinea = '<span class="badge badge-accion-ok">Hecha</span>';
+    } else {
+        $accionLinea = '<span class="badge badge-accion-bloqueada">Bloqueada</span>';
     }
 
-    $filas .= '<tr>' .
-        '<td>' . h((string) $linea['producto_nombre']) . '</td>' .
-        '<td>' . (int) $linea['cantidad'] . '</td>' .
-        '<td>' . h(money_eur((float) $linea['precio_final_unitario'])) . '</td>' .
-        '<td>' . h(money_eur((float) $linea['subtotal'])) . '</td>' .
-        '<td>' . ($preparado ? 'Si' : 'No') . '</td>' .
-        '<td><div class="cocina-acciones">' . $accionLinea . '</div></td>' .
-        '</tr>';
+    $estadoLinea = $preparado
+        ? '<span class="badge badge-linea-preparada">Preparada</span>'
+        : '<span class="badge badge-linea-pendiente">Pendiente</span>';
+
+    $lineasHtml .= '<article class="card cocina-linea-card">' .
+        '<div class="cocina-linea-header">' .
+        '<h4>' . h((string) $linea['producto_nombre']) . '</h4>' .
+        $estadoLinea .
+        '</div>' .
+        '<dl class="cocina-meta cocina-linea-meta">' .
+        '<div class="cocina-meta-item"><dt>Cantidad</dt><dd>' . (int) $linea['cantidad'] . '</dd></div>' .
+        '<div class="cocina-meta-item"><dt>Precio unidad</dt><dd>' . h(money_eur((float) $linea['precio_final_unitario'])) . '</dd></div>' .
+        '<div class="cocina-meta-item cocina-total"><dt>Subtotal</dt><dd>' . h(money_eur((float) $linea['subtotal'])) . '</dd></div>' .
+        '</dl>' .
+        '<div class="cocina-card-actions cocina-card-actions-lg">' . $accionLinea . '</div>' .
+        '</article>';
 }
 
-if ($filas === '') {
-    $filas = '<tr><td colspan="6">No hay lineas en este pedido.</td></tr>';
+if ($lineasHtml === '') {
+    $lineasHtml = '<div class="alert cocina-empty">No hay lineas en este pedido.</div>';
 }
 
 $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
-$resumenAsignacion = 'Sin cocinero asignado.';
+$estadoLabel = PedidoRepository::estadoLabel($estado);
+$tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
+$progresoPorcentaje = $totalLineas > 0
+    ? (int) round(($lineasPreparadas / $totalLineas) * 100)
+    : 0;
+$resumenAsignacion = '<span class="badge badge-accion-pendiente">Sin asignar</span>';
+$cocineroNombre = (string) $cocinero['nombre_usuario'];
+$cocineroAvatar = (string) ($cocinero['avatar'] ?? '');
+$cocineroEtiqueta = 'Cocinero disponible';
 if ($pedidoCocineroId > 0) {
+    $cocineroNombre = trim((string) ($pedido['cocinero_usuario'] ?? ''));
+    if ($cocineroNombre === '') {
+        $cocineroNombre = 'Cocinero asignado';
+    }
+    $cocineroAvatar = (string) ($pedido['cocinero_avatar'] ?? '');
+    $cocineroEtiqueta = 'Cocinero asignado';
     $resumenAsignacion = $esCocineroAsignado
-        ? 'Asignado a ti.'
-        : 'Asignado a otro cocinero (' . (string) ($pedido['cocinero_usuario'] ?? 'desconocido') . ').';
+        ? '<span class="badge badge-accion-ok">Tuyo</span>'
+        : '<span class="badge badge-accion-bloqueada">Otro cocinero</span>';
 }
+
+$avatarHtml = '<img class="avatar-cocina avatar-cocina-lg" src="' . h(avatar_web_url($cocineroAvatar !== '' ? $cocineroAvatar : null)) . '" alt="Avatar cocinero" width="96" height="96">';
+$estadoBadge = '<span class="badge badge-estado-' . h($estado) . '">' . h($estadoLabel) . '</span>';
 
 $accionesPedido = '';
 if ($estado === 'en_preparacion' && $pedidoCocineroId === 0) {
@@ -79,7 +108,7 @@ if ($estado === 'en_preparacion' && $pedidoCocineroId === 0) {
         '<form method="post" action="' . h(base_url('cocina_tomar.php')) . '" class="inline">' .
         csrf_field() .
         '<input type="hidden" name="id" value="' . (int) $pedido['id'] . '">' .
-        '<button class="btn btn-primary" type="submit">Tomar pedido</button>' .
+        '<button class="btn btn-primary btn-lg" type="submit">Tomar pedido</button>' .
         '</form>';
 }
 elseif ($puedePreparar && $totalLineas > 0 && $lineasPreparadas === $totalLineas) {
@@ -87,65 +116,85 @@ elseif ($puedePreparar && $totalLineas > 0 && $lineasPreparadas === $totalLineas
         '<form method="post" action="' . h(base_url('cocina_finalizar.php')) . '" class="inline">' .
         csrf_field() .
         '<input type="hidden" name="pedido_id" value="' . (int) $pedido['id'] . '">' .
-        '<button class="btn btn-primary" type="submit">Finalizar cocina -> Listo cocina</button>' .
+        '<button class="btn btn-primary btn-lg" type="submit">Finalizar cocina -> Listo cocina</button>' .
         '</form>';
 }
+elseif ($puedePreparar && $totalLineas === 0) {
+    $accionesPedido = '<span class="badge badge-accion-pendiente">Sin lineas</span>';
+}
 elseif ($puedePreparar) {
-    $accionesPedido = '<span class="cocina-estado-note">Debes marcar todas las lineas como preparadas para finalizar.</span>';
+    $accionesPedido = '<span class="badge badge-accion-pendiente">Faltan lineas</span>';
+}
+elseif ($estado === 'cocinando') {
+    $accionesPedido = '<span class="badge badge-accion-bloqueada">Otro cocinero</span>';
 }
 elseif ($estado === 'listo_cocina') {
-    $accionesPedido = '<span class="cocina-estado-note">Pedido ya listo para camarero.</span>';
+    $accionesPedido = '<span class="badge badge-accion-ok">Listo camarero</span>';
 }
 
 $contenido = <<<HTML
 <section class="cocina-panel">
-  <h2>Detalle de cocina</h2>
-  <ul class="cocina-resumen">
-    <li><strong>ID:</strong> {id}</li>
-    <li><strong>Numero del dia:</strong> {numero_visible}</li>
-    <li><strong>Estado:</strong> {estado}</li>
-    <li><strong>Tipo:</strong> {tipo}</li>
-    <li><strong>Cliente:</strong> {cliente}</li>
-    <li><strong>Total:</strong> {total}</li>
-    <li><strong>Cocinero:</strong> {asignacion}</li>
-    <li><strong>Progreso lineas:</strong> {lineas_preparadas}/{lineas_totales}</li>
-  </ul>
-  <div class="cocina-acciones">{acciones_pedido}</div>
+  <div class="card cocina-detalle-hero cocina-card-estado-{estado_codigo}">
+    <div class="cocina-detalle-main">
+      <div class="cocina-card-header">
+        <div>
+          <span class="cocina-card-label">Pedido de cocina</span>
+          <h2 class="cocina-detalle-title">#{id}</h2>
+          <span class="cocina-pedido-numero">Numero dia {numero_visible}</span>
+        </div>
+        {estado_badge}
+      </div>
+      <dl class="cocina-meta cocina-detalle-meta">
+        <div class="cocina-meta-item"><dt>Cliente</dt><dd>{cliente}</dd></div>
+        <div class="cocina-meta-item"><dt>Tipo</dt><dd>{tipo}</dd></div>
+        <div class="cocina-meta-item cocina-total"><dt>Total</dt><dd>{total}</dd></div>
+      </dl>
+    </div>
+    <aside class="cocina-cocinero-card">
+      {avatar_cocinero}
+      <span class="cocina-card-label">{cocinero_etiqueta}</span>
+      <strong>{cocinero_nombre}</strong>
+      <span class="cocina-estado-note">{asignacion}</span>
+    </aside>
+  </div>
+</section>
+
+<section class="card cocina-progreso-card">
+  <div class="cocina-progreso-header">
+    <div>
+      <span class="cocina-card-label">Progreso de lineas</span>
+      <strong>{lineas_preparadas}/{lineas_totales} preparadas</strong>
+    </div>
+    <span class="cocina-progreso-numero">{progreso_porcentaje}%</span>
+  </div>
+  <progress class="cocina-progress" max="100" value="{progreso_porcentaje}">{progreso_porcentaje}%</progress>
+  <div class="cocina-card-actions cocina-card-actions-lg">{acciones_pedido}</div>
 </section>
 
 <section class="cocina-panel">
   <h3>Lineas del pedido</h3>
-  <table class="table tabla-cocina">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Cantidad</th>
-        <th>Precio unidad</th>
-        <th>Subtotal</th>
-        <th>Preparado</th>
-        <th>Accion</th>
-      </tr>
-    </thead>
-    <tbody>
-      {$filas}
-    </tbody>
-  </table>
-  <p><a href="{volver}">Volver al panel de cocina</a></p>
+  <div class="grid cocina-lineas-grid">{$lineasHtml}</div>
+  <p><a class="btn" href="{volver}">Volver al panel de cocina</a></p>
 </section>
 HTML;
 
 $contenido = str_replace(
-    ['{id}', '{numero_visible}', '{estado}', '{tipo}', '{cliente}', '{total}', '{asignacion}', '{lineas_preparadas}', '{lineas_totales}', '{acciones_pedido}', '{volver}'],
+    ['{id}', '{numero_visible}', '{estado_codigo}', '{estado_badge}', '{tipo}', '{cliente}', '{total}', '{avatar_cocinero}', '{cocinero_etiqueta}', '{cocinero_nombre}', '{asignacion}', '{lineas_preparadas}', '{lineas_totales}', '{progreso_porcentaje}', '{acciones_pedido}', '{volver}'],
     [
         (string) (int) $pedido['id'],
         h($numeroVisible),
-        h(PedidoRepository::estadoLabel($estado)),
-        h(PedidoRepository::tipoLabel((string) $pedido['tipo'])),
+        h($estado),
+        $estadoBadge,
+        h($tipoLabel),
         h((string) $pedido['cliente_usuario']),
         h(money_eur((float) $pedido['total'])),
-        h($resumenAsignacion),
+        $avatarHtml,
+        h($cocineroEtiqueta),
+        h($cocineroNombre),
+        $resumenAsignacion,
         (string) $lineasPreparadas,
         (string) $totalLineas,
+        (string) $progresoPorcentaje,
         $accionesPedido,
         h(base_url('cocina.php')),
     ],

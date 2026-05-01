@@ -12,58 +12,79 @@ foreach ($pedidos as $pedido) {
     $estado = (string) $pedido['estado'];
     $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
     $asignado = (int) ($pedido['cocinero_id'] ?? 0);
+    $estadoLabel = PedidoRepository::estadoLabel($estado);
+    $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
+    $cliente = (string) $pedido['cliente_usuario'];
+    $total = money_eur((float) $pedido['total']);
 
-    $badgeEstado = '<span class="badge badge-estado-' . h($estado) . '">' . h(PedidoRepository::estadoLabel($estado)) . '</span>';
-    $acciones = '<div class="actions-inline">';
-    $acciones .= '<a class="boton" href="' . h(base_url('cocina_detalle.php?id=' . $pedidoId)) . '">Detalle cocina</a>';
+    $badgeEstado = '<span class="badge badge-estado-' . h($estado) . '">' . h($estadoLabel) . '</span>';
+    $urlDetalle = h(base_url('cocina_detalle.php?id=' . $pedidoId));
+    $accionPrincipal = '';
+    $accionSecundaria = '<a class="btn" href="' . $urlDetalle . '">Ver detalle</a>';
 
     if ($estado === 'en_preparacion') {
-        $acciones .=
+        $accionPrincipal =
             '<form method="post" action="' . h(base_url('cocina_tomar.php')) . '" class="inline">' .
             csrf_field() .
             '<input type="hidden" name="id" value="' . $pedidoId . '">' .
             '<button class="btn btn-primary" type="submit">Tomar pedido</button>' .
             '</form>';
     }
-
-    if ($estado === 'cocinando') {
+    elseif ($estado === 'cocinando') {
         if ($asignado === (int) $cocinero['id']) {
-            $acciones .= '<span class="cocina-estado-note">(lo estas preparando)</span>';
+            $accionPrincipal = '<a class="btn btn-primary" href="' . $urlDetalle . '">Preparar lineas</a>';
+            $accionSecundaria = '<span class="badge badge-accion-ok">Tuyo</span>';
         } elseif ($asignado > 0) {
-            $acciones .= '<span class="cocina-estado-note">(asignado a otro cocinero)</span>';
+            $accionPrincipal = '<span class="badge badge-accion-bloqueada">Otro cocinero</span>';
+        } else {
+            $accionPrincipal = '<a class="btn btn-primary" href="' . $urlDetalle . '">Revisar pedido</a>';
         }
     }
-    $acciones .= '</div>';
 
-    $tarjetas .= '<article class="card">' .
-        '<h3>Pedido #' . $pedidoId . ' · ' . h($numeroVisible) . '</h3>' .
-        '<p><strong>Estado:</strong> ' . $badgeEstado . '</p>' .
-        '<p><strong>Cliente:</strong> ' . h((string) $pedido['cliente_usuario']) . '</p>' .
-        '<p><strong>Tipo:</strong> ' . h(PedidoRepository::tipoLabel((string) $pedido['tipo'])) . '</p>' .
-        '<p><strong>Total:</strong> ' . h(money_eur((float) $pedido['total'])) . '</p>' .
+    $acciones = '<div class="cocina-card-actions">' . $accionPrincipal . $accionSecundaria . '</div>';
+
+    $tarjetas .= '<article class="card cocina-card cocina-card-estado-' . h($estado) . '">' .
+        '<div class="cocina-card-header">' .
+        '<div>' .
+        '<span class="cocina-card-label">Pedido</span>' .
+        '<h3 class="cocina-card-title">#' . $pedidoId . '</h3>' .
+        '<span class="cocina-pedido-numero">Numero dia ' . h($numeroVisible) . '</span>' .
+        '</div>' .
+        $badgeEstado .
+        '</div>' .
+        '<dl class="cocina-meta">' .
+        '<div class="cocina-meta-item"><dt>Cliente</dt><dd>' . h($cliente) . '</dd></div>' .
+        '<div class="cocina-meta-item"><dt>Tipo</dt><dd>' . h($tipoLabel) . '</dd></div>' .
+        '<div class="cocina-meta-item cocina-total"><dt>Total</dt><dd>' . h($total) . '</dd></div>' .
+        '</dl>' .
         $acciones .
         '</article>';
 }
 
 if ($tarjetas === '') {
-    $tarjetas = '<p>No hay pedidos pendientes de cocina.</p>';
+    $tarjetas = '<div class="alert cocina-empty">No hay pedidos pendientes de cocina.</div>';
 }
 
 $avatarHtml = '<img class="avatar-cocina" src="' . h(avatar_web_url(isset($cocinero['avatar']) ? (string) $cocinero['avatar'] : null)) . '" alt="Avatar cocinero" width="80">';
+$totalPedidos = count($pedidos);
 
 $contenido = <<<HTML
 <section class="cocina-panel">
-  <h2>Panel de cocina</h2>
-  <p>Usuario: <strong>{usuario}</strong></p>
-  <p>{$avatarHtml}</p>
-  <p class="cocina-info">Pedidos visibles: En preparacion y Cocinando.</p>
-  <div class="grid">{$tarjetas}</div>
+  <div class="cocina-panel-header">
+    {$avatarHtml}
+    <div>
+      <h2>Panel de cocina</h2>
+      <p class="cocina-info">Usuario: <strong>{usuario}</strong></p>
+      <p class="cocina-info">Pedidos activos: <strong>{total_pedidos}</strong></p>
+    </div>
+  </div>
+  <div class="grid cocina-grid">{$tarjetas}</div>
 </section>
 HTML;
 
 $contenido = str_replace(
-    ['{usuario}'],
-    [h((string) $cocinero['nombre_usuario'])],
+    ['{usuario}', '{total_pedidos}'],
+    [h((string) $cocinero['nombre_usuario']), (string) $totalPedidos],
     $contenido
 );
 

@@ -22,10 +22,10 @@
 
 ## Paneles de cocina y camarero
 
-- [ ] Redisenar `cocina.php` como panel de tarjetas por pedido: estado claro, total, cliente, tipo y accion principal visible.
-- [ ] Redisenar `cocina_detalle.php`: cabecera del pedido, progreso de lineas, avatar del cocinero y botones grandes para preparar/finalizar.
-- [ ] Redisenar `pedidos_camarero.php`: agrupar por flujo real: cobrar, esperando cocina, preparar entrega, entregar.
-- [ ] Evitar textos largos explicativos en la pantalla; que el estado y la accion se entiendan visualmente.
+- [x] Redisenar `cocina.php` como panel de tarjetas por pedido: estado claro, total, cliente, tipo y accion principal visible.
+- [x] Redisenar `cocina_detalle.php`: cabecera del pedido, progreso de lineas, avatar del cocinero y botones grandes para preparar/finalizar.
+- [x] Redisenar `pedidos_camarero.php`: agrupar por flujo real: cobrar, esperando cocina, preparar entrega, entregar.
+- [x] Evitar textos largos explicativos en la pantalla; que el estado y la accion se entiendan visualmente.
 
 ## Pedido cliente, carrito y productos
 
