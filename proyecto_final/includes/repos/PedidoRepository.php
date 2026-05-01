@@ -20,11 +20,11 @@ final class PedidoRepository
     public static function createFromCart(int $clienteId, string $tipo, string $metodoPago, array $items): int
     {
         if ($clienteId <= 0) {
-            throw new InvalidArgumentException('Cliente invalido.');
+            throw new InvalidArgumentException('Cliente inválido.');
         }
 
         if (empty($items)) {
-            throw new InvalidArgumentException('El pedido no puede estar vacio.');
+            throw new InvalidArgumentException('El pedido no puede estar vacío.');
         }
 
         $tipo = self::normalizeTipo($tipo);
@@ -57,7 +57,7 @@ final class PedidoRepository
                     || (int) $producto['ofertado'] !== 1
                     || (int) ($producto['disponible'] ?? 0) !== 1
                 ) {
-                    throw new RuntimeException('Uno de los productos ya no esta disponible.');
+                    throw new RuntimeException('Uno de los productos ya no está disponible.');
                 }
 
                 $precioBase = (float) $producto['precio'];
@@ -78,7 +78,7 @@ final class PedidoRepository
             }
 
             if (empty($lineas)) {
-                throw new RuntimeException('No hay lineas validas para crear el pedido.');
+                throw new RuntimeException('No hay líneas válidas para crear el pedido.');
             }
 
             $fechaDia = date('Y-m-d');
@@ -366,7 +366,7 @@ final class PedidoRepository
         return match ($estado) {
             'nuevo' => 'Nuevo',
             'recibido' => 'Recibido',
-            'en_preparacion' => 'En preparacion',
+            'en_preparacion' => 'En preparación',
             'cocinando' => 'Cocinando',
             'listo_cocina' => 'Listo cocina',
             'terminado' => 'Terminado',
@@ -396,17 +396,25 @@ final class PedidoRepository
 
     private static function normalizeTipo(string $tipo): string
     {
-        return in_array($tipo, self::TIPOS, true) ? $tipo : 'local';
+        if (!in_array($tipo, self::TIPOS, true)) {
+            throw new InvalidArgumentException('Tipo de pedido inválido.');
+        }
+
+        return $tipo;
     }
 
     private static function normalizeMetodoPago(string $metodoPago): string
     {
-        return in_array($metodoPago, self::METODOS_PAGO, true) ? $metodoPago : 'camarero';
+        if (!in_array($metodoPago, self::METODOS_PAGO, true)) {
+            throw new InvalidArgumentException('Método de pago inválido.');
+        }
+
+        return $metodoPago;
     }
 
-    private static function normalizeEstado(string $estado): string
+    private static function isValidEstado(string $estado): bool
     {
-        return in_array($estado, self::ESTADOS, true) ? $estado : 'nuevo';
+        return in_array($estado, self::ESTADOS, true);
     }
 
     private static function buildEstadoWhere(?array $estados, array &$params, string $alias = ''): string
@@ -420,11 +428,19 @@ final class PedidoRepository
         $i = 0;
 
         foreach ($estados as $estado) {
-            $estadoNorm = self::normalizeEstado((string) $estado);
+            $estadoNorm = (string) $estado;
+            if (!self::isValidEstado($estadoNorm)) {
+                continue;
+            }
+
             $key = 'estado_' . $i;
             $params[$key] = $estadoNorm;
             $partes[] = ':' . $key;
             $i++;
+        }
+
+        if ($partes === []) {
+            return ' AND 1=0';
         }
 
         return ' AND ' . $columna . ' IN (' . implode(', ', $partes) . ')';

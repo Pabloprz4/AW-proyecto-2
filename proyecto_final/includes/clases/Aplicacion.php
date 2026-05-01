@@ -28,11 +28,6 @@ class Aplicacion
     }
 
     /**
-     * @var array Almacena los datos de configuración de la BD
-     */
-    private $bdDatosConexion;
-
-    /**
      * @var string Ruta donde se encuentra instalada la aplicación. Por ejemplo, si
      *             la aplicación está accesible en http://localhost/miApp/, este
      *             parámetro debería de tomar el valor "/miApp".
@@ -57,11 +52,6 @@ class Aplicacion
      * @var boolean
      */
     private $generandoError;
-
-    /**
-     * @var \mysqli Conexión de BD.
-     */
-    private $conn;
 
     /**
      * @var array Tabla asociativa con los atributos pendientes de la petición.
@@ -119,8 +109,6 @@ class Aplicacion
     public function init($bdDatosConexion, $rutaApp = '/', $dirInstalacion = __DIR__)
     {
         if (!$this->inicializada) {
-            $this->bdDatosConexion = $bdDatosConexion;
-
             $this->rutaRaizApp = $rutaApp;
 
             // Eliminamos la última /
@@ -139,7 +127,6 @@ class Aplicacion
                 }
             }
 
-            $this->conn = null;
             session_start();
 
             /* Se inicializa los atributos asociados a la petición en base a la sesión y se eliminan para que
@@ -158,9 +145,6 @@ class Aplicacion
     public function shutdown()
     {
         $this->compruebaInstanciaInicializada();
-        if ($this->conn !== null && !$this->conn->connect_errno) {
-            $this->conn->close();
-        }
     }
 
     /**
@@ -171,34 +155,6 @@ class Aplicacion
         if (!$this->inicializada && $this->generandoError) {
             $this->paginaError(502, 'Error', 'Oops', 'La aplicación no está configurada. Tienes que modificar el fichero config.php');
         }
-    }
-
-    /**
-     * Devuelve una conexión a la BD. Se encarga de que exista como mucho una conexión a la BD por petición.
-     *
-     * @return \mysqli Conexión a MySQL.
-     */
-    public function getConexionBd()
-    {
-        $this->compruebaInstanciaInicializada();
-        if (!$this->conn) {
-            $bdHost = $this->bdDatosConexion['host'];
-            $bdUser = $this->bdDatosConexion['user'];
-            $bdPass = $this->bdDatosConexion['pass'];
-            $bd = $this->bdDatosConexion['bd'];
-
-            $conn = new \mysqli($bdHost, $bdUser, $bdPass, $bd);
-            if ($conn->connect_errno) {
-                echo "Error de conexión a la BD ({$conn->connect_errno}):  {$conn->connect_error}";
-                exit();
-            }
-            if (!$conn->set_charset("utf8mb4")) {
-                echo "Error al configurar la BD ({$conn->errno}):  {$conn->error}";
-                exit();
-            }
-            $this->conn = $conn;
-        }
-        return $this->conn;
     }
 
     public function resuelve($path = '')

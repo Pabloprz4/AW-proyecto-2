@@ -17,22 +17,22 @@ $datos = [
 
 if (is_post()) {
     foreach ($datos as $campo => $_) {
-        $datos[$campo] = trim((string) ($_POST[$campo] ?? ''));
+        $datos[$campo] = post_trimmed_string($campo);
     }
 
-    $password = (string) ($_POST['password'] ?? '');
-    $password2 = (string) ($_POST['password2'] ?? '');
+    $password = post_string('password');
+    $password2 = post_string('password2');
 
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF invalido.';
+        $errores[] = 'Token CSRF inválido.';
     }
 
     if (!preg_match('/^[a-zA-Z0-9._-]{3,30}$/', $datos['nombre_usuario'])) {
-        $errores[] = 'Nombre de usuario invalido (3-30 caracteres alfanumericos, ., _, -).';
+        $errores[] = 'Nombre de usuario inválido (3-30 caracteres alfanuméricos, ., _, -).';
     }
 
     if (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
-        $errores[] = 'Email invalido.';
+        $errores[] = 'Email inválido.';
     }
 
     if ($datos['nombre'] === '' || $datos['apellidos'] === '') {
@@ -40,11 +40,11 @@ if (is_post()) {
     }
 
     if (strlen($password) < 6) {
-        $errores[] = 'La contrasena debe tener al menos 6 caracteres.';
+        $errores[] = 'La contraseña debe tener al menos 6 caracteres.';
     }
 
     if ($password !== $password2) {
-        $errores[] = 'Las contrasenas no coinciden.';
+        $errores[] = 'Las contraseñas no coinciden.';
     }
 
     if (UsuarioRepository::usernameExists($datos['nombre_usuario'])) {
@@ -67,7 +67,7 @@ if (is_post()) {
             'activo' => 1,
         ]);
 
-        flash_set('ok', 'Usuario creado correctamente. Ya puedes iniciar sesion.');
+        flash_set('ok', 'Usuario creado correctamente. Ya puedes iniciar sesión.');
         redirect_to('login.php');
     }
 }
@@ -104,11 +104,11 @@ $contenido = <<<HTML
       <input type="text" id="apellidos" name="apellidos" value="{apellidos}" required>
     </p>
     <p>
-      <label for="password">Contrasena:</label><br>
+      <label for="password">Contraseña:</label><br>
       <input type="password" id="password" name="password" required>
     </p>
     <p>
-      <label for="password2">Repite la contrasena:</label><br>
+      <label for="password2">Repite la contraseña:</label><br>
       <input type="password" id="password2" name="password2" required>
     </p>
     <p><button type="submit">Crear cuenta</button></p>

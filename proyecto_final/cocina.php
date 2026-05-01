@@ -32,7 +32,7 @@ foreach ($pedidos as $pedido) {
     }
     elseif ($estado === 'cocinando') {
         if ($asignado === (int) $cocinero['id']) {
-            $accionPrincipal = '<a class="btn btn-primary" href="' . $urlDetalle . '">Preparar lineas</a>';
+            $accionPrincipal = '<a class="btn btn-primary" href="' . $urlDetalle . '">Preparar líneas</a>';
             $accionSecundaria = '<span class="badge badge-accion-ok">Tuyo</span>';
         } elseif ($asignado > 0) {
             $accionPrincipal = '<span class="badge badge-accion-bloqueada">Otro cocinero</span>';
@@ -48,7 +48,7 @@ foreach ($pedidos as $pedido) {
         '<div>' .
         '<span class="cocina-card-label">Pedido</span>' .
         '<h3 class="cocina-card-title">#' . $pedidoId . '</h3>' .
-        '<span class="cocina-pedido-numero">Numero dia ' . h($numeroVisible) . '</span>' .
+        '<span class="cocina-pedido-numero">Número día ' . h($numeroVisible) . '</span>' .
         '</div>' .
         $badgeEstado .
         '</div>' .

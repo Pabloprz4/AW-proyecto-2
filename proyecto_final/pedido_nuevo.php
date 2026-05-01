@@ -8,130 +8,72 @@ $cart = pedido_cart_get();
 $errores = [];
 
 if (is_post()) {
-    $accion = (string) ($_POST['accion'] ?? '');
+    $accion = post_enum('accion', ['set_tipo', 'add_item']);
 
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF invalido.';
+        $errores[] = 'Token CSRF inválido.';
+    } elseif ($accion === null) {
+        $errores[] = 'Acción inválida.';
     } else {
         if ($accion === 'set_tipo') {
-            $tipo = (string) ($_POST['tipo'] ?? 'local');
-            $cart['tipo'] = $tipo === 'llevar' ? 'llevar' : 'local';
-            pedido_cart_save($cart);
-            flash_set('ok', 'Tipo de pedido actualizado.');
-            redirect_to('pedido_nuevo.php');
-        }
-
-        if ($accion === 'add_item') {
-            $productoId = (int) ($_POST['producto_id'] ?? 0);
-            $cantidad = (int) ($_POST['cantidad'] ?? 1);
-            $cantidad = max(1, min(50, $cantidad));
-
-            $producto = $productoId > 0 ? ProductoRepository::findById($productoId) : null;
-            if (
-                !$producto
-                || (int) $producto['ofertado'] !== 1
-                || (int) ($producto['disponible'] ?? 0) !== 1
-            ) {
-                $errores[] = 'El producto no esta disponible.';
+            $tipo = post_enum('tipo', ['local', 'llevar']);
+            if ($tipo === null) {
+                $errores[] = 'Tipo de pedido inválido.';
             } else {
-                $key = (string) $productoId;
-                $actual = (int) ($cart['items'][$key] ?? 0);
-                $cart['items'][$key] = min(50, $actual + $cantidad);
+                $cart['tipo'] = $tipo;
                 pedido_cart_save($cart);
-                flash_set('ok', 'Producto anadido al carrito.');
+                flash_set('ok', 'Tipo de pedido actualizado.');
                 redirect_to('pedido_nuevo.php');
             }
         }
 
-        if ($accion === 'update_cart') {
-            $cantidades = $_POST['cantidades'] ?? [];
-            if (!is_array($cantidades)) {
-                $cantidades = [];
-            }
+        if ($accion === 'add_item') {
+            $productoId = post_positive_int('producto_id');
+            $cantidad = post_int_range('cantidad', 1, 50);
 
-            $nuevosItems = [];
-            foreach ($cantidades as $productoId => $cantidad) {
-                $id = (int) $productoId;
-                $qty = (int) $cantidad;
-                if ($id > 0 && $qty > 0) {
-                    $nuevosItems[(string) $id] = min(50, $qty);
-                }
-            }
-
-            $cart['items'] = $nuevosItems;
-            pedido_cart_save($cart);
-            flash_set('ok', 'Carrito actualizado.');
-            redirect_to('pedido_nuevo.php');
-        }
-
-        if ($accion === 'clear_cart') {
-            pedido_cart_clear();
-            flash_set('ok', 'Pedido cancelado: carrito vaciado.');
-            redirect_to('pedido_nuevo.php');
-        }
-
-        if ($accion === 'checkout') {
-            if (empty($cart['items'])) {
-                $errores[] = 'Debes anadir al menos un producto al carrito.';
+            if ($productoId === null || $cantidad === null) {
+                $errores[] = 'Producto o cantidad inválidos.';
             } else {
-                redirect_to('pedido_pago.php');
+                $producto = ProductoRepository::findById($productoId);
+
+                if (
+                    !$producto
+                    || (int) $producto['ofertado'] !== 1
+                    || (int) ($producto['disponible'] ?? 0) !== 1
+                ) {
+                    $errores[] = 'El producto no está disponible.';
+                } else {
+                    $key = (string) $productoId;
+                    $actual = (int) ($cart['items'][$key] ?? 0);
+                    $cart['items'][$key] = min(50, $actual + $cantidad);
+                    pedido_cart_save($cart);
+                    flash_set('ok', 'Producto añadido al carrito.');
+                    redirect_to('pedido_nuevo.php');
+                }
             }
         }
     }
+}
+
+$cart = pedido_cart_get();
+$resumenCarrito = pedido_cart_resolve($cart);
+if ($resumenCarrito['ids_invalidos'] !== []) {
+    foreach ($resumenCarrito['ids_invalidos'] as $idInvalido) {
+        unset($cart['items'][$idInvalido]);
+    }
+    pedido_cart_save($cart);
+    $resumenCarrito = pedido_cart_resolve($cart);
+    $errores[] = 'Se han retirado del carrito productos que ya no están ofertados o disponibles.';
 }
 
 $productos = ProductoRepository::all(false);
 $porCategoria = [];
 foreach ($productos as $producto) {
-    $categoria = (string) ($producto['categoria_nombre'] ?? 'Sin categoria');
+    $categoria = (string) ($producto['categoria_nombre'] ?? 'Sin categoría');
     if (!isset($porCategoria[$categoria])) {
         $porCategoria[$categoria] = [];
     }
     $porCategoria[$categoria][] = $producto;
-}
-
-$lineasCarrito = [];
-$totalCarrito = 0.0;
-$idsInvalidos = [];
-
-foreach ($cart['items'] as $productoId => $cantidad) {
-    $id = (int) $productoId;
-    $qty = (int) $cantidad;
-    if ($id <= 0 || $qty <= 0) {
-        continue;
-    }
-
-    $producto = ProductoRepository::findById($id);
-    if (
-        !$producto
-        || (int) $producto['ofertado'] !== 1
-        || (int) ($producto['disponible'] ?? 0) !== 1
-    ) {
-        $idsInvalidos[] = (string) $id;
-        continue;
-    }
-
-    $precioBase = (float) $producto['precio'];
-    $iva = (float) $producto['iva'];
-    $precioFinal = round($precioBase * (1 + ($iva / 100)), 2);
-    $subtotal = round($precioFinal * $qty, 2);
-    $totalCarrito += $subtotal;
-
-    $lineasCarrito[] = [
-        'id' => $id,
-        'nombre' => (string) $producto['nombre'],
-        'cantidad' => $qty,
-        'precio_final' => $precioFinal,
-        'subtotal' => $subtotal,
-    ];
-}
-
-if ($idsInvalidos !== []) {
-    foreach ($idsInvalidos as $idInvalido) {
-        unset($cart['items'][$idInvalido]);
-    }
-    pedido_cart_save($cart);
-    $errores[] = 'Se han retirado del carrito productos que ya no estan ofertados o disponibles.';
 }
 
 $listaErrores = '';
@@ -145,112 +87,94 @@ if ($errores) {
 
 $bloquesCategorias = '';
 foreach ($porCategoria as $categoriaNombre => $productosCategoria) {
-    $filas = '';
+    $tarjetas = '';
     foreach ($productosCategoria as $producto) {
         $precioBase = (float) $producto['precio'];
         $iva = (float) $producto['iva'];
         $precioFinal = round($precioBase * (1 + ($iva / 100)), 2);
         $descripcion = trim((string) ($producto['descripcion'] ?? ''));
+        $foto = trim((string) ($producto['foto'] ?? ''));
+        $fotoHtml = $foto !== ''
+            ? '<img class="producto-card-img" src="' . h(base_url($foto)) . '" alt="' . h((string) $producto['nombre']) . '">'
+            : '<div class="producto-card-img producto-card-img-empty">Sin imagen</div>';
 
-        $filas .= '<tr>' .
-            '<td>' . h((string) $producto['nombre']) . '</td>' .
-            '<td>' . h($descripcion) . '</td>' .
-            '<td>' . h(money_eur($precioFinal)) . '</td>' .
-            '<td>' .
-            '<form method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
+        $tarjetas .= '<article class="card producto-card">' .
+            $fotoHtml .
+            '<div class="producto-card-body">' .
+            '<h4>' . h((string) $producto['nombre']) . '</h4>' .
+            '<p>' . h($descripcion) . '</p>' .
+            '<strong>' . h(money_eur($precioFinal)) . '</strong>' .
+            '<form class="producto-add-form" method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
             csrf_field() .
             '<input type="hidden" name="accion" value="add_item">' .
             '<input type="hidden" name="producto_id" value="' . (int) $producto['id'] . '">' .
             '<input class="form-control" type="number" name="cantidad" min="1" max="50" value="1" required>' .
-            '<button class="btn" type="submit">Anadir</button>' .
+            '<button class="btn btn-primary" type="submit">Añadir</button>' .
             '</form>' .
-            '</td>' .
-            '</tr>';
+            '</div>' .
+            '</article>';
     }
 
-    $bloquesCategorias .= '<section>' .
+    $bloquesCategorias .= '<section class="catalogo-categoria">' .
         '<h3>' . h($categoriaNombre) . '</h3>' .
-        '<table class="table">' .
-        '<thead><tr><th>Producto</th><th>Descripcion</th><th>Precio final</th><th>Accion</th></tr></thead>' .
-        '<tbody>' . $filas . '</tbody>' .
-        '</table>' .
+        '<div class="grid catalogo-grid">' . $tarjetas . '</div>' .
         '</section>';
 }
 
-$lineasHtml = '';
-foreach ($lineasCarrito as $linea) {
-    $lineasHtml .= '<tr>' .
-        '<td>' . h($linea['nombre']) . '</td>' .
-        '<td><input class="form-control" type="number" name="cantidades[' . (int) $linea['id'] . ']" min="0" max="50" value="' . (int) $linea['cantidad'] . '" required></td>' .
-        '<td>' . h(money_eur((float) $linea['precio_final'])) . '</td>' .
-        '<td>' . h(money_eur((float) $linea['subtotal'])) . '</td>' .
-        '</tr>';
-}
-
-$carritoHtml = '';
-if ($lineasCarrito === []) {
-    $carritoHtml = '<p>Tu carrito esta vacio.</p>';
-} else {
-    $carritoHtml = '<form method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
-        csrf_field() .
-        '<input type="hidden" name="accion" value="update_cart">' .
-        '<table class="table">' .
-        '<thead><tr><th>Producto</th><th>Cantidad (0 elimina)</th><th>Precio unidad</th><th>Subtotal</th></tr></thead>' .
-        '<tbody>' . $lineasHtml . '</tbody>' .
-        '</table>' .
-        '<p><strong>Total: ' . h(money_eur($totalCarrito)) . '</strong></p>' .
-        '<p><button class="btn btn-primary" type="submit">Actualizar carrito</button></p>' .
-        '</form>' .
-        '<form method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
-        csrf_field() .
-        '<input type="hidden" name="accion" value="clear_cart">' .
-        '<button class="btn btn-danger" type="submit">Cancelar pedido (vaciar carrito)</button>' .
-        '</form>' .
-        '<form method="post" action="' . h(base_url('pedido_nuevo.php')) . '">' .
-        csrf_field() .
-        '<input type="hidden" name="accion" value="checkout">' .
-        '<button class="btn btn-primary" type="submit">Ir al pago</button>' .
-        '</form>';
-}
-
 $tipoLabel = $cart['tipo'] === 'llevar' ? 'Llevar' : 'Local';
+$cantidadCarrito = (int) $resumenCarrito['cantidad_total'];
+$totalCarrito = (float) $resumenCarrito['total'];
+$carritoTexto = $cantidadCarrito === 1 ? '1 producto' : $cantidadCarrito . ' productos';
 
 $contenido = <<<HTML
 <section>
   <h2>Nuevo pedido</h2>
-  <p>Usuario: {$usuario['nombre_usuario']}</p>
+  <p>Usuario: {usuario}</p>
   {$listaErrores}
-  <form method="post" action="{action}">
+  <form class="form-row" method="post" action="{action}">
     {csrf}
     <input type="hidden" name="accion" value="set_tipo">
-    <label for="tipo">Tipo de pedido:</label>
-    <select class="form-control" id="tipo" name="tipo">
-      <option value="local" {sel_local}>Local</option>
-      <option value="llevar" {sel_llevar}>Llevar</option>
-    </select>
+    <div>
+      <label for="tipo">Tipo de pedido:</label>
+      <select class="form-control" id="tipo" name="tipo">
+        <option value="local" {sel_local}>Local</option>
+        <option value="llevar" {sel_llevar}>Llevar</option>
+      </select>
+    </div>
     <button class="btn" type="submit">Guardar tipo</button>
   </form>
-  <p>Tipo actual: <strong>{$tipoLabel}</strong></p>
+</section>
+
+<section class="card carrito-resumen">
+  <div>
+    <span class="cocina-card-label">Carrito</span>
+    <strong>{carrito_texto}</strong>
+    <span>Total: {total_carrito}</span>
+  </div>
+  <div class="actions-inline">
+    <span class="badge badge-accion-pendiente">{tipo_label}</span>
+    <a class="btn btn-primary" href="{carrito_url}">Ver carrito</a>
+  </div>
 </section>
 
 <section>
   <h2>Carta de productos ofertados</h2>
   {$bloquesCategorias}
 </section>
-
-<section>
-  <h2>Carrito</h2>
-  {$carritoHtml}
-</section>
 HTML;
 
 $contenido = str_replace(
-    ['{action}', '{csrf}', '{sel_local}', '{sel_llevar}'],
+    ['{usuario}', '{action}', '{csrf}', '{sel_local}', '{sel_llevar}', '{carrito_texto}', '{total_carrito}', '{tipo_label}', '{carrito_url}'],
     [
+        h((string) $usuario['nombre_usuario']),
         h(base_url('pedido_nuevo.php')),
         csrf_field(),
         $cart['tipo'] === 'local' ? 'selected' : '',
         $cart['tipo'] === 'llevar' ? 'selected' : '',
+        h($carritoTexto),
+        h(money_eur($totalCarrito)),
+        h($tipoLabel),
+        h(base_url('carrito.php')),
     ],
     $contenido
 );

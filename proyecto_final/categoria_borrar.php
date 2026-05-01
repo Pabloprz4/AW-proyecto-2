@@ -10,9 +10,15 @@ if (!is_post() || !verify_csrf()) {
     redirect_to('categorias.php');
 }
 
-$id = (int) ($_POST['id'] ?? 0);
-if ($id <= 0) {
+$id = post_positive_int('id');
+if ($id === null) {
     flash_set('error', 'ID de categoría inválido.');
+    redirect_to('categorias.php');
+}
+
+$categoria = CategoriaRepository::findById($id);
+if (!$categoria) {
+    flash_set('error', 'Categoría no encontrada.');
     redirect_to('categorias.php');
 }
 

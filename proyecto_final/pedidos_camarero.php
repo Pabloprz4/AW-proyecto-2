@@ -107,7 +107,7 @@ foreach ($pedidos as $pedido) {
         '<div>' .
         '<span class="cocina-card-label">Pedido</span>' .
         '<h3 class="cocina-card-title">#' . $pedidoId . '</h3>' .
-        '<span class="cocina-pedido-numero">Numero dia ' . h($numeroVisible) . '</span>' .
+        '<span class="cocina-pedido-numero">Número día ' . h($numeroVisible) . '</span>' .
         '</div>' .
         $badgeEstado .
         '</div>' .

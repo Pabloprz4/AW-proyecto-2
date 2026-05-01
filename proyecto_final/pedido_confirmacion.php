@@ -4,10 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
 
 $usuario = require_login();
-$pedidoId = (int) ($_GET['id'] ?? 0);
+$pedidoId = get_positive_int('id');
 
-if ($pedidoId <= 0) {
-    flash_set('error', 'Pedido invalido.');
+if ($pedidoId === null) {
+    flash_set('error', 'Pedido inválido.');
     redirect_to('index.php');
 }
 
@@ -32,14 +32,14 @@ $metodoPagoLabel = PedidoRepository::metodoPagoLabel((string) $pedido['metodo_pa
 
 $contenido = <<<HTML
 <section>
-  <h2>Confirmacion del pedido</h2>
+  <h2>Confirmación del pedido</h2>
   <p>Tu pedido se ha registrado correctamente.</p>
   <ul>
     <li><strong>ID interno:</strong> {id}</li>
-    <li><strong>Numero de pedido (dia actual):</strong> {numero_visible}</li>
+    <li><strong>Número de pedido (día actual):</strong> {numero_visible}</li>
     <li><strong>Estado:</strong> {estado}</li>
     <li><strong>Tipo:</strong> {tipo}</li>
-    <li><strong>Metodo de pago:</strong> {metodo_pago}</li>
+    <li><strong>Método de pago:</strong> {metodo_pago}</li>
     <li><strong>Total:</strong> {total}</li>
   </ul>
   <p>
@@ -66,4 +66,4 @@ $contenido = str_replace(
     $contenido
 );
 
-render_page('Confirmacion del pedido', $contenido);
+render_page('Confirmación del pedido', $contenido);

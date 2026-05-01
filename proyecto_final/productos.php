@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
 
-// solo gereente
 $usuarioActual = require_role('gerente');
 $productos = ProductoRepository::all(true);
 
@@ -11,7 +10,6 @@ $filas = '';
 foreach ($productos as $producto) {
     $acciones = '<a href="' . h(base_url('producto_form.php?id=' . (int) $producto['id'])) . '">Editar</a>';
 
-    // boton para dejar de ofertar 
     if ((int) $producto['ofertado'] === 1) {
         $acciones .= 
             '<form method="post" action="' . h(base_url('producto_borrar.php')) . '" class="inline">' .
@@ -34,7 +32,7 @@ foreach ($productos as $producto) {
         '<td>' . h((string) $producto['nombre']) . '</td>' .
         '<td>' . h((string) $producto['categoria_nombre']) . '</td>' .
         '<td>' . h($precioConFormato) . '</td>' .
-        '<td>' . ((int) $producto['disponible'] === 1 ? 'Si' : 'No') . '</td>' .
+        '<td>' . ((int) $producto['disponible'] === 1 ? 'Sí' : 'No') . '</td>' .
         '<td>' . ((int) $producto['ofertado'] === 1 ? 'Sí' : 'No') . '</td>' .
         '<td>' . $imagenesCount . '</td>' .
         '<td>' . $acciones . '</td>' .
@@ -55,7 +53,7 @@ $contenido = <<<HTML
         <th>Precio</th>
         <th>Disponible</th>
         <th>Ofertado</th>
-        <th>Imagenes</th>
+        <th>Imágenes</th>
         <th>Acciones</th>
       </tr>
     </thead>

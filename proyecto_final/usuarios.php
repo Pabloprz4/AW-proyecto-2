@@ -33,7 +33,7 @@ foreach ($usuarios as $usuario) {
 
 $contenido = <<<HTML
 <section>
-  <h2>Gestion de usuarios</h2>
+  <h2>Gestión de usuarios</h2>
   <p><a href="{nuevo}">Crear nuevo usuario</a></p>
   <table class="table">
     <thead>
@@ -57,4 +57,4 @@ HTML;
 
 $contenido = str_replace('{nuevo}', h(base_url('usuario_form.php')), $contenido);
 
-render_page('Gestion de usuarios', $contenido);
+render_page('Gestión de usuarios', $contenido);

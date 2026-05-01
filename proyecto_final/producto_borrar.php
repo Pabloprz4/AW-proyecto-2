@@ -10,13 +10,22 @@ if (!is_post() || !verify_csrf()) {
     redirect_to('productos.php');
 }
 
-$id = (int) ($_POST['id'] ?? 0);
-if ($id <= 0) {
+$id = post_positive_int('id');
+if ($id === null) {
     flash_set('error', 'ID de producto inválido.');
     redirect_to('productos.php');
 }
 
-ProductoRepository::setOfertado($id, false);
-flash_set('ok', 'Producto retirado de la oferta correctamente.');
+$producto = ProductoRepository::findById($id);
+if (!$producto) {
+    flash_set('error', 'Producto no encontrado.');
+    redirect_to('productos.php');
+}
+
+if (ProductoRepository::setOfertado($id, false)) {
+    flash_set('ok', 'Producto retirado de la oferta correctamente.');
+} else {
+    flash_set('error', 'No se pudo retirar el producto de la oferta.');
+}
 
 redirect_to('productos.php');

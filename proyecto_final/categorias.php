@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
 
-// solo el gerente puede gestionar categorías
 $usuarioActual = require_role('gerente');
 $categorias = CategoriaRepository::all();
 

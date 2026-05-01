@@ -61,7 +61,7 @@ function auth_login(string $username, string $password): bool
 
     session_regenerate_id(true);
 
-    // Compatibilidad con la sesion del sistema base de practica3
+    // Compatibilidad con la sesión del sistema base.
     $_SESSION['login'] = true;
     $_SESSION['nombre'] = (string) $user['nombre'];
     $_SESSION['idUsuario'] = (int) $user['id'];
@@ -83,7 +83,7 @@ function require_login(): array
     $user = auth_user();
 
     if ($user === null) {
-        flash_set('error', 'Debes iniciar sesion para acceder.');
+        flash_set('error', 'Debes iniciar sesión para acceder.');
         redirect_to('login.php');
     }
 
@@ -95,7 +95,7 @@ function require_role(string $role): array
     $user = require_login();
 
     if (!has_role($role, (string) ($user['rol'] ?? ''))) {
-        flash_set('error', 'No tienes permisos para acceder a esta pagina.');
+        flash_set('error', 'No tienes permisos para acceder a esta página.');
         redirect_to('index.php');
     }
 
@@ -107,7 +107,7 @@ function require_exact_role(string $role): array
     $user = require_login();
 
     if ((string) ($user['rol'] ?? '') !== $role) {
-        flash_set('error', 'No tienes permisos para acceder a esta pagina.');
+        flash_set('error', 'No tienes permisos para acceder a esta página.');
         redirect_to('index.php');
     }
 

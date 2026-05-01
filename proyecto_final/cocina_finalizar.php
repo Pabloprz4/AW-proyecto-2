@@ -6,13 +6,13 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $cocinero = require_role('cocinero');
 
 if (!is_post() || !verify_csrf()) {
-    flash_set('error', 'Peticion invalida.');
+    flash_set('error', 'Petición inválida.');
     redirect_to('cocina.php');
 }
 
-$pedidoId = (int) ($_POST['pedido_id'] ?? 0);
-if ($pedidoId <= 0) {
-    flash_set('error', 'Pedido invalido.');
+$pedidoId = post_positive_int('pedido_id');
+if ($pedidoId === null) {
+    flash_set('error', 'Pedido inválido.');
     redirect_to('cocina.php');
 }
 
@@ -23,7 +23,7 @@ if (!$pedido) {
 }
 
 if ((string) $pedido['estado'] !== 'cocinando') {
-    flash_set('error', 'El pedido no esta en estado cocinando.');
+    flash_set('error', 'El pedido no está en estado cocinando.');
     redirect_to('cocina_detalle.php?id=' . $pedidoId);
 }
 
@@ -34,13 +34,13 @@ if ((int) ($pedido['cocinero_id'] ?? 0) !== (int) $cocinero['id']) {
 
 $lineas = PedidoRepository::lineasByPedido($pedidoId);
 if ($lineas === []) {
-    flash_set('error', 'El pedido no tiene lineas para finalizar.');
+    flash_set('error', 'El pedido no tiene líneas para finalizar.');
     redirect_to('cocina_detalle.php?id=' . $pedidoId);
 }
 
 foreach ($lineas as $linea) {
     if ((int) ($linea['preparado'] ?? 0) !== 1) {
-        flash_set('error', 'Debes preparar todas las lineas antes de finalizar.');
+        flash_set('error', 'Debes preparar todas las líneas antes de finalizar.');
         redirect_to('cocina_detalle.php?id=' . $pedidoId);
     }
 }
@@ -53,4 +53,3 @@ if ($ok) {
 
 flash_set('error', 'No se pudo finalizar cocina. Verifica el estado actual.');
 redirect_to('cocina_detalle.php?id=' . $pedidoId);
-

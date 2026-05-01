@@ -145,7 +145,7 @@ final class UsuarioRepository
     private static function normalizeRole(string $role): string
     {
         if (!in_array($role, self::ROLES, true)) {
-            return 'cliente';
+            throw new InvalidArgumentException('Rol inválido.');
         }
 
         return $role;

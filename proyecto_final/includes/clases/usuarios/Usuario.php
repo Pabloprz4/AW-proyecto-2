@@ -1,7 +1,6 @@
 <?php
 namespace es\ucm\fdi\aw\usuarios;
 
-use es\ucm\fdi\aw\Aplicacion;
 use es\ucm\fdi\aw\MagicProperties;
 
 class Usuario
@@ -16,175 +15,88 @@ class Usuario
     {
         $usuario = self::buscaUsuario($nombreUsuario);
         if ($usuario && $usuario->compruebaPassword($password)) {
-            return self::cargaRoles($usuario);
+            return $usuario;
         }
+
         return false;
     }
-    
+
     public static function crea($nombreUsuario, $password, $nombre, $rol)
     {
-        $user = new Usuario($nombreUsuario, self::hashPassword($password), $nombre);
-        $user->añadeRol($rol);
-        return $user->guarda();
+        self::ensureReposLoaded();
+
+        if (\UsuarioRepository::usernameExists((string) $nombreUsuario)) {
+            return false;
+        }
+
+        $id = \UsuarioRepository::create([
+            'nombre_usuario' => (string) $nombreUsuario,
+            'email' => (string) $nombreUsuario . '@legacy.local',
+            'nombre' => (string) $nombre,
+            'apellidos' => '',
+            'password' => (string) $password,
+            'rol' => ((int) $rol === self::ADMIN_ROLE) ? 'gerente' : 'cliente',
+            'avatar' => null,
+            'activo' => 1,
+        ]);
+
+        return self::buscaPorId($id);
     }
 
     public static function buscaUsuario($nombreUsuario)
     {
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        $query = sprintf("SELECT * FROM Usuarios U WHERE U.nombreUsuario='%s'", $conn->real_escape_string($nombreUsuario));
-        $rs = $conn->query($query);
-        $result = false;
-        if ($rs) {
-            $fila = $rs->fetch_assoc();
-            if ($fila) {
-                $result = new Usuario($fila['nombreUsuario'], $fila['password'], $fila['nombre'], $fila['id']);
-            }
-            $rs->free();
-        } else {
-            error_log("Error BD ({$conn->errno}): {$conn->error}");
-        }
-        return $result;
+        self::ensureReposLoaded();
+        $row = \UsuarioRepository::findByUsername((string) $nombreUsuario);
+
+        return is_array($row) ? self::fromRow($row) : false;
     }
 
     public static function buscaPorId($idUsuario)
     {
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        $query = sprintf("SELECT * FROM Usuarios WHERE id=%d", $idUsuario);
-        $rs = $conn->query($query);
-        $result = false;
-        if ($rs) {
-            $fila = $rs->fetch_assoc();
-            if ($fila) {
-                $result = new Usuario($fila['nombreUsuario'], $fila['password'], $fila['nombre'], $fila['id']);
-            }
-            $rs->free();
-        } else {
-            error_log("Error BD ({$conn->errno}): {$conn->error}");
-        }
-        return $result;
-    }
-    
-    private static function hashPassword($password)
-    {
-        return password_hash($password, PASSWORD_DEFAULT);
-    }
-
-    private static function cargaRoles($usuario)
-    {
-        $roles=[];
-            
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        $query = sprintf("SELECT RU.rol FROM RolesUsuario RU WHERE RU.usuario=%d"
-            , $usuario->id
-        );
-        $rs = $conn->query($query);
-        if ($rs) {
-            $roles = $rs->fetch_all(MYSQLI_ASSOC);
-            $rs->free();
-
-            $usuario->roles = [];
-            foreach($roles as $rol) {
-                $usuario->roles[] = $rol['rol'];
-            }
-            return $usuario;
-
-        } else {
-            error_log("Error BD ({$conn->errno}): {$conn->error}");
-        }
-        return false;
-    }
-   
-    private static function inserta($usuario)
-    {
-        $result = false;
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        $query=sprintf("INSERT INTO Usuarios(nombreUsuario, nombre, password) VALUES ('%s', '%s', '%s')"
-            , $conn->real_escape_string($usuario->nombreUsuario)
-            , $conn->real_escape_string($usuario->nombre)
-            , $conn->real_escape_string($usuario->password)
-        );
-        if ( $conn->query($query) ) {
-            $usuario->id = $conn->insert_id;
-            $result = self::insertaRoles($usuario);
-        } else {
-            error_log("Error BD ({$conn->errno}): {$conn->error}");
-        }
-        return $result;
-    }
-   
-    private static function insertaRoles($usuario)
-    {
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        foreach($usuario->roles as $rol) {
-            $query = sprintf("INSERT INTO RolesUsuario(usuario, rol) VALUES (%d, %d)"
-                , $usuario->id
-                , $rol
-            );
-            if ( ! $conn->query($query) ) {
-                error_log("Error BD ({$conn->errno}): {$conn->error}");
-                return false;
-            }
-        }
-        return $usuario;
-    }
-    
-    private static function actualiza($usuario)
-    {
-        $result = false;
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        $query=sprintf("UPDATE Usuarios U SET nombreUsuario = '%s', nombre='%s', password='%s' WHERE U.id=%d"
-            , $conn->real_escape_string($usuario->nombreUsuario)
-            , $conn->real_escape_string($usuario->nombre)
-            , $conn->real_escape_string($usuario->password)
-            , $usuario->id
-        );
-        if ( $conn->query($query) ) {
-            $result = self::borraRoles($usuario);
-            if ($result) {
-                $result = self::insertaRoles($usuario);
-            }
-        } else {
-            error_log("Error BD ({$conn->errno}): {$conn->error}");
-        }
-        
-        return $result;
-    }
-   
-    private static function borraRoles($usuario)
-    {
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        $query = sprintf("DELETE FROM RolesUsuario RU WHERE RU.usuario = %d"
-            , $usuario->id
-        );
-        if ( ! $conn->query($query) ) {
-            error_log("Error BD ({$conn->errno}): {$conn->error}");
+        self::ensureReposLoaded();
+        $id = (int) $idUsuario;
+        if ($id <= 0) {
             return false;
         }
-        return $usuario;
+
+        $row = \UsuarioRepository::findById($id);
+        return is_array($row) ? self::fromRow($row) : false;
     }
-    
-    private static function borra($usuario)
+
+    private static function ensureReposLoaded(): void
     {
-        return self::borraPorId($usuario->id);
-    }
-    
-    private static function borraPorId($idUsuario)
-    {
-        if (!$idUsuario) {
-            return false;
-        } 
-        /* Los roles se borran en cascada por la FK
-         * $result = self::borraRoles($usuario) !== false;
-         */
-        $conn = Aplicacion::getInstance()->getConexionBd();
-        $query = sprintf("DELETE FROM Usuarios U WHERE U.id = %d"
-            , $idUsuario
-        );
-        if ( ! $conn->query($query) ) {
-            error_log("Error BD ({$conn->errno}): {$conn->error}");
-            return false;
+        $includesDir = dirname(__DIR__, 2);
+
+        if (!function_exists('db')) {
+            require_once $includesDir . '/db.php';
         }
-        return true;
+
+        if (!class_exists('\\UsuarioRepository')) {
+            require_once $includesDir . '/repos/UsuarioRepository.php';
+        }
+    }
+
+    private static function fromRow(array $row): self
+    {
+        return new self(
+            (string) $row['nombre_usuario'],
+            (string) $row['password_hash'],
+            (string) $row['nombre'],
+            (int) $row['id'],
+            self::rolesFromRole((string) $row['rol'])
+        );
+    }
+
+    private static function rolesFromRole(string $role): array
+    {
+        return $role === 'gerente'
+            ? [self::ADMIN_ROLE, self::USER_ROLE]
+            : [self::USER_ROLE];
+    }
+
+    private static function hashPassword($password): string
+    {
+        return password_hash((string) $password, PASSWORD_DEFAULT);
     }
 
     private $id;
@@ -223,7 +135,10 @@ class Usuario
 
     public function añadeRol($role)
     {
-        $this->roles[] = $role;
+        $role = (int) $role;
+        if (in_array($role, [self::ADMIN_ROLE, self::USER_ROLE], true) && !in_array($role, $this->roles, true)) {
+            $this->roles[] = $role;
+        }
     }
 
     public function getRoles()
@@ -233,35 +148,26 @@ class Usuario
 
     public function tieneRol($role)
     {
-        if ($this->roles == null) {
-            self::cargaRoles($this);
-        }
-        return array_search($role, $this->roles) !== false;
+        return in_array((int) $role, $this->roles, true);
     }
 
     public function compruebaPassword($password)
     {
-        return password_verify($password, $this->password);
+        return password_verify((string) $password, $this->password);
     }
 
     public function cambiaPassword($nuevoPassword)
     {
         $this->password = self::hashPassword($nuevoPassword);
     }
-    
+
     public function guarda()
     {
-        if ($this->id !== null) {
-            return self::actualiza($this);
-        }
-        return self::inserta($this);
+        throw new \RuntimeException('La persistencia legacy de usuarios no forma parte del flujo actual.');
     }
-    
+
     public function borrate()
     {
-        if ($this->id !== null) {
-            return self::borra($this);
-        }
         return false;
     }
 }

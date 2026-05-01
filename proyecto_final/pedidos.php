@@ -5,7 +5,6 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $gerente = require_role('gerente');
 
-$estadoFiltro = trim((string) ($_GET['estado'] ?? ''));
 $estadosPendientes = [
     'recibido',
     'en_preparacion',
@@ -13,6 +12,10 @@ $estadosPendientes = [
     'listo_cocina',
     'terminado',
 ];
+$estadoFiltro = '';
+if (isset($_GET['estado']) && $_GET['estado'] !== '') {
+    $estadoFiltro = request_enum($_GET, 'estado', $estadosPendientes) ?? '';
+}
 
 $pedidos = in_array($estadoFiltro, $estadosPendientes, true)
     ? PedidoRepository::all([$estadoFiltro])
@@ -64,7 +67,7 @@ $contenido = <<<HTML
 <section>
   <h2>Pedidos pendientes (Gerente)</h2>
   <p>Usuario: <strong>{usuario}</strong></p>
-  <p>Estados pendientes visibles: Recibido, En preparacion, Cocinando, Listo cocina y Terminado.</p>
+  <p>Estados pendientes visibles: Recibido, En preparación, Cocinando, Listo cocina y Terminado.</p>
   <form method="get" action="{action}">
     <label for="estado">Filtrar por estado:</label>
     <select id="estado" name="estado">{$opcionesEstado}</select>
@@ -77,7 +80,7 @@ $contenido = <<<HTML
     <thead>
       <tr>
         <th>ID</th>
-        <th>Numero dia</th>
+        <th>Número día</th>
         <th>Fecha</th>
         <th>Cliente</th>
         <th>Camarero</th>

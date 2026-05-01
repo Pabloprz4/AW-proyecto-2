@@ -7,92 +7,62 @@ $usuario = require_login();
 $cart = pedido_cart_get();
 
 if (empty($cart['items'])) {
-    flash_set('error', 'Tu carrito esta vacio. Debes crear un pedido primero.');
-    redirect_to('pedido_nuevo.php');
+    flash_set('error', 'Tu carrito está vacío. Debes crear un pedido primero.');
+    redirect_to('carrito.php');
 }
 
-$lineasValidas = [];
-$total = 0.0;
-$idsInvalidos = [];
-
-foreach ($cart['items'] as $productoId => $cantidad) {
-    $id = (int) $productoId;
-    $qty = (int) $cantidad;
-    if ($id <= 0 || $qty <= 0) {
-        continue;
-    }
-
-    $producto = ProductoRepository::findById($id);
-    if (
-        !$producto
-        || (int) $producto['ofertado'] !== 1
-        || (int) ($producto['disponible'] ?? 0) !== 1
-    ) {
-        $idsInvalidos[] = (string) $id;
-        continue;
-    }
-
-    $precioBase = (float) $producto['precio'];
-    $iva = (float) $producto['iva'];
-    $precioFinal = round($precioBase * (1 + ($iva / 100)), 2);
-    $subtotal = round($precioFinal * $qty, 2);
-    $total += $subtotal;
-
-    $lineasValidas[] = [
-        'producto_id' => $id,
-        'nombre' => (string) $producto['nombre'],
-        'cantidad' => $qty,
-        'precio_final' => $precioFinal,
-        'subtotal' => $subtotal,
-    ];
-}
-
-if ($idsInvalidos !== []) {
-    foreach ($idsInvalidos as $idInvalido) {
+$resumenCarrito = pedido_cart_resolve($cart);
+if ($resumenCarrito['ids_invalidos'] !== []) {
+    foreach ($resumenCarrito['ids_invalidos'] as $idInvalido) {
         unset($cart['items'][$idInvalido]);
     }
     pedido_cart_save($cart);
+    flash_set('error', 'Se han retirado del carrito productos que ya no están ofertados o disponibles.');
+    redirect_to('carrito.php');
 }
 
+$lineasValidas = $resumenCarrito['lineas'];
+$total = (float) $resumenCarrito['total'];
+
 if ($lineasValidas === []) {
-    flash_set('error', 'No hay productos validos para pagar.');
-    redirect_to('pedido_nuevo.php');
+    flash_set('error', 'No hay productos válidos para pagar.');
+    redirect_to('carrito.php');
 }
 
 $errores = [];
-$metodoPago = (string) ($_POST['metodo_pago'] ?? 'camarero');
+$metodoPago = is_post() ? (post_enum('metodo_pago', ['tarjeta', 'camarero']) ?? '') : 'camarero';
 $tarjeta = [
-    'numero' => trim((string) ($_POST['tarjeta_numero'] ?? '')),
-    'titular' => trim((string) ($_POST['tarjeta_titular'] ?? '')),
-    'caducidad' => trim((string) ($_POST['tarjeta_caducidad'] ?? '')),
-    'cvv' => trim((string) ($_POST['tarjeta_cvv'] ?? '')),
+    'numero' => post_trimmed_string('tarjeta_numero'),
+    'titular' => post_trimmed_string('tarjeta_titular'),
+    'caducidad' => post_trimmed_string('tarjeta_caducidad'),
+    'cvv' => post_trimmed_string('tarjeta_cvv'),
 ];
 
 if (is_post()) {
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF invalido.';
+        $errores[] = 'Token CSRF inválido.';
     }
 
-    if (!in_array($metodoPago, ['tarjeta', 'camarero'], true)) {
-        $errores[] = 'Metodo de pago invalido.';
+    if ($metodoPago === '') {
+        $errores[] = 'Método de pago inválido.';
     }
 
     if ($metodoPago === 'tarjeta') {
         $numero = preg_replace('/\s+/', '', $tarjeta['numero']);
         if (!is_string($numero) || !preg_match('/^\d{13,19}$/', $numero)) {
-            $errores[] = 'Numero de tarjeta invalido.';
+            $errores[] = 'Número de tarjeta inválido.';
         }
 
         if (strlen($tarjeta['titular']) < 3) {
-            $errores[] = 'Titular de tarjeta invalido.';
+            $errores[] = 'Titular de tarjeta inválido.';
         }
 
         if (!preg_match('/^(0[1-9]|1[0-2])\/\d{2}$/', $tarjeta['caducidad'])) {
-            $errores[] = 'Caducidad invalida (MM/AA).';
+            $errores[] = 'Caducidad inválida (MM/AA).';
         }
 
         if (!preg_match('/^\d{3,4}$/', $tarjeta['cvv'])) {
-            $errores[] = 'CVV invalido.';
+            $errores[] = 'CVV inválido.';
         }
     }
 
@@ -157,7 +127,7 @@ $contenido = <<<HTML
 </section>
 
 <section>
-  <h2>Metodo de pago</h2>
+  <h2>Método de pago</h2>
   <form method="post" action="{action}">
     {csrf}
     <p>
@@ -173,7 +143,7 @@ $contenido = <<<HTML
     <fieldset>
       <legend>Datos de tarjeta (solo si eliges tarjeta)</legend>
       <p>
-        <label for="tarjeta_numero">Numero:</label><br>
+        <label for="tarjeta_numero">Número:</label><br>
         <input type="text" id="tarjeta_numero" name="tarjeta_numero" value="{tarjeta_numero}">
       </p>
       <p>
@@ -220,7 +190,7 @@ $contenido = str_replace(
         h($tarjeta['titular']),
         h($tarjeta['caducidad']),
         h($tarjeta['cvv']),
-        h(base_url('pedido_nuevo.php')),
+        h(base_url('carrito.php')),
     ],
     $contenido
 );

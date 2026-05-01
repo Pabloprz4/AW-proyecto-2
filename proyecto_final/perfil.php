@@ -9,17 +9,19 @@ $avataresPredefinidos = predefined_avatars();
 
 if (!$usuario) {
     auth_logout();
-    flash_set('error', 'No se encontro tu usuario.');
+    flash_set('error', 'No se encontró tu usuario.');
     redirect_to('login.php');
 }
 
 $errores = [];
 
 if (is_post()) {
-    $accion = (string) ($_POST['accion'] ?? 'guardar');
+    $accion = post_enum('accion', ['quitar_avatar', 'seleccionar_avatar', 'guardar']);
 
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF invalido.';
+        $errores[] = 'Token CSRF inválido.';
+    } elseif ($accion === null) {
+        $errores[] = 'Acción inválida.';
     }
 
     if (!$errores && $accion === 'quitar_avatar') {
@@ -30,15 +32,13 @@ if (is_post()) {
     }
 
     if (!$errores && $accion === 'seleccionar_avatar') {
-        $avatarSeleccionado = trim((string) ($_POST['avatar_predefinido'] ?? ''));
+        $avatarSeleccionado = request_enum($_POST, 'avatar_predefinido', array_merge(['__default__'], $avataresPredefinidos));
         $nuevoAvatar = null;
 
-        if ($avatarSeleccionado !== '__default__') {
-            if (!is_predefined_avatar($avatarSeleccionado)) {
-                $errores[] = 'El avatar predefinido seleccionado no es valido.';
-            } else {
-                $nuevoAvatar = $avatarSeleccionado;
-            }
+        if ($avatarSeleccionado === null) {
+            $errores[] = 'El avatar predefinido seleccionado no es válido.';
+        } elseif ($avatarSeleccionado !== '__default__') {
+            $nuevoAvatar = $avatarSeleccionado;
         }
 
         if (!$errores) {
@@ -55,19 +55,19 @@ if (is_post()) {
     }
 
     if (!$errores && $accion === 'guardar') {
-        $nombreUsuario = trim((string) ($_POST['nombre_usuario'] ?? ''));
-        $email = trim((string) ($_POST['email'] ?? ''));
-        $nombre = trim((string) ($_POST['nombre'] ?? ''));
-        $apellidos = trim((string) ($_POST['apellidos'] ?? ''));
-        $password = (string) ($_POST['password'] ?? '');
-        $password2 = (string) ($_POST['password2'] ?? '');
+        $nombreUsuario = post_trimmed_string('nombre_usuario');
+        $email = post_trimmed_string('email');
+        $nombre = post_trimmed_string('nombre');
+        $apellidos = post_trimmed_string('apellidos');
+        $password = post_string('password');
+        $password2 = post_string('password2');
 
         if (!preg_match('/^[a-zA-Z0-9._-]{3,30}$/', $nombreUsuario)) {
-            $errores[] = 'Nombre de usuario invalido.';
+            $errores[] = 'Nombre de usuario inválido.';
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errores[] = 'Email invalido.';
+            $errores[] = 'Email inválido.';
         }
 
         if ($nombre === '' || $apellidos === '') {
@@ -75,19 +75,19 @@ if (is_post()) {
         }
 
         if ($password !== '' && strlen($password) < 6) {
-            $errores[] = 'La contrasena nueva debe tener al menos 6 caracteres.';
+            $errores[] = 'La contraseña nueva debe tener al menos 6 caracteres.';
         }
 
         if ($password !== $password2) {
-            $errores[] = 'Las contrasenas no coinciden.';
+            $errores[] = 'Las contraseñas no coinciden.';
         }
 
         if (UsuarioRepository::usernameExists($nombreUsuario, (int) $usuario['id'])) {
-            $errores[] = 'Ese nombre de usuario ya esta en uso.';
+            $errores[] = 'Ese nombre de usuario ya está en uso.';
         }
 
         if (UsuarioRepository::emailExists($email, (int) $usuario['id'])) {
-            $errores[] = 'Ese email ya esta en uso.';
+            $errores[] = 'Ese email ya está en uso.';
         }
 
         $avatarPath = null;
@@ -97,26 +97,39 @@ if (is_post()) {
             if (($avatarUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
                 $errores[] = 'Error al subir el avatar.';
             } else {
-                $tmp = (string) $avatarUpload['tmp_name'];
-                $finfo = new finfo(FILEINFO_MIME_TYPE);
-                $mime = $finfo->file($tmp);
-
-                $ext = match ($mime) {
-                    'image/jpeg' => 'jpg',
-                    'image/png' => 'png',
-                    'image/webp' => 'webp',
-                    default => '',
-                };
-
-                if ($ext === '') {
-                    $errores[] = 'Formato de avatar no valido (solo JPG, PNG o WEBP).';
+                $tmpValue = $avatarUpload['tmp_name'] ?? '';
+                $tmp = is_array($tmpValue) ? '' : (string) $tmpValue;
+                $sizeValue = $avatarUpload['size'] ?? 0;
+                $size = is_array($sizeValue) ? 0 : (int) $sizeValue;
+                if ($tmp === '' || !is_uploaded_file($tmp)) {
+                    $errores[] = 'No se pudo procesar el avatar subido.';
+                } elseif ($size <= 0 || $size > 2 * 1024 * 1024) {
+                    $errores[] = 'El avatar debe pesar como máximo 2 MB.';
                 } else {
-                    $fileName = 'u' . (int) $usuario['id'] . '_' . time() . '.' . $ext;
-                    $destinoFisico = UPLOAD_AVATARS_DIR . '/' . $fileName;
-                    if (!move_uploaded_file($tmp, $destinoFisico)) {
-                        $errores[] = 'No se pudo guardar el avatar subido.';
+                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                    $mime = $finfo->file($tmp);
+
+                    $ext = match ($mime) {
+                        'image/jpeg' => 'jpg',
+                        'image/png' => 'png',
+                        'image/webp' => 'webp',
+                        default => '',
+                    };
+
+                    if ($ext === '') {
+                        $errores[] = 'Formato de avatar no válido (solo JPG, PNG o WEBP).';
                     } else {
-                        $avatarPath = 'uploads/avatars/' . $fileName;
+                        if (!is_dir(UPLOAD_AVATARS_DIR)) {
+                            mkdir(UPLOAD_AVATARS_DIR, 0777, true);
+                        }
+
+                        $fileName = 'u' . (int) $usuario['id'] . '_' . time() . '.' . $ext;
+                        $destinoFisico = UPLOAD_AVATARS_DIR . '/' . $fileName;
+                        if (!move_uploaded_file($tmp, $destinoFisico)) {
+                            $errores[] = 'No se pudo guardar el avatar subido.';
+                        } else {
+                            $avatarPath = 'uploads/avatars/' . $fileName;
+                        }
                     }
                 }
             }
@@ -230,7 +243,7 @@ $bloquePedidosPerfil = <<<HTML
     <thead>
       <tr>
         <th>ID</th>
-        <th>Numero dia</th>
+        <th>Número día</th>
         <th>Estado</th>
         <th>Total</th>
         <th>Acciones</th>
@@ -240,7 +253,7 @@ $bloquePedidosPerfil = <<<HTML
       {$filasPedidosPerfil}
     </tbody>
   </table>
-  <p><a href="{mis_pedidos}">Ver historico completo de pedidos</a></p>
+  <p><a href="{mis_pedidos}">Ver histórico completo de pedidos</a></p>
 </section>
 HTML;
 
@@ -276,11 +289,11 @@ $contenido = <<<HTML
       <input type="file" id="avatar" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
     </p>
     <p>
-      <label for="password">Nueva contrasena (opcional):</label><br>
+      <label for="password">Nueva contraseña (opcional):</label><br>
       <input type="password" id="password" name="password">
     </p>
     <p>
-      <label for="password2">Repetir contrasena:</label><br>
+      <label for="password2">Repetir contraseña:</label><br>
       <input type="password" id="password2" name="password2">
     </p>
     <p><button type="submit">Guardar cambios</button></p>

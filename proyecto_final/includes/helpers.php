@@ -68,6 +68,92 @@ function verify_csrf(): bool
         && hash_equals((string) $_SESSION['csrf_token'], $token);
 }
 
+function request_positive_int(array $source, string $key): ?int
+{
+    if (!array_key_exists($key, $source) || is_array($source[$key])) {
+        return null;
+    }
+
+    $value = trim((string) $source[$key]);
+    if (!preg_match('/^[1-9][0-9]*$/', $value)) {
+        return null;
+    }
+
+    return (int) $value;
+}
+
+function post_positive_int(string $key): ?int
+{
+    return request_positive_int($_POST, $key);
+}
+
+function get_positive_int(string $key): ?int
+{
+    return request_positive_int($_GET, $key);
+}
+
+function request_int_range(array $source, string $key, int $min, int $max): ?int
+{
+    if (!array_key_exists($key, $source) || is_array($source[$key])) {
+        return null;
+    }
+
+    $value = trim((string) $source[$key]);
+    if (!preg_match('/^-?[0-9]+$/', $value)) {
+        return null;
+    }
+
+    $intValue = (int) $value;
+    if ($intValue < $min || $intValue > $max) {
+        return null;
+    }
+
+    return $intValue;
+}
+
+function post_int_range(string $key, int $min, int $max): ?int
+{
+    return request_int_range($_POST, $key, $min, $max);
+}
+
+function request_enum(array $source, string $key, array $allowed): ?string
+{
+    if (!array_key_exists($key, $source) || is_array($source[$key])) {
+        return null;
+    }
+
+    $value = trim((string) $source[$key]);
+    return in_array($value, $allowed, true) ? $value : null;
+}
+
+function post_enum(string $key, array $allowed): ?string
+{
+    return request_enum($_POST, $key, $allowed);
+}
+
+function request_trimmed_string(array $source, string $key): string
+{
+    if (!array_key_exists($key, $source) || is_array($source[$key])) {
+        return '';
+    }
+
+    return trim((string) $source[$key]);
+}
+
+function post_trimmed_string(string $key): string
+{
+    return request_trimmed_string($_POST, $key);
+}
+
+function post_string(string $key): string
+{
+    if (!array_key_exists($key, $_POST) || is_array($_POST[$key])) {
+        return '';
+    }
+
+    return (string) $_POST[$key];
+}
+
 function role_level(string $role): int
 {
     return match ($role) {
@@ -209,6 +295,58 @@ function pedido_cart_save(array $cart): void
 function pedido_cart_clear(): void
 {
     unset($_SESSION['pedido_cart']);
+}
+
+function pedido_cart_resolve(array $cart): array
+{
+    $lineas = [];
+    $total = 0.0;
+    $cantidadTotal = 0;
+    $idsInvalidos = [];
+
+    $items = isset($cart['items']) && is_array($cart['items']) ? $cart['items'] : [];
+
+    foreach ($items as $productoId => $cantidad) {
+        $id = (int) $productoId;
+        $qty = (int) $cantidad;
+        if ($id <= 0 || $qty <= 0) {
+            continue;
+        }
+
+        $producto = ProductoRepository::findById($id);
+        if (
+            !$producto
+            || (int) $producto['ofertado'] !== 1
+            || (int) ($producto['disponible'] ?? 0) !== 1
+        ) {
+            $idsInvalidos[] = (string) $id;
+            continue;
+        }
+
+        $precioBase = (float) $producto['precio'];
+        $iva = (float) $producto['iva'];
+        $precioFinal = round($precioBase * (1 + ($iva / 100)), 2);
+        $subtotal = round($precioFinal * $qty, 2);
+        $total += $subtotal;
+        $cantidadTotal += $qty;
+
+        $lineas[] = [
+            'id' => $id,
+            'producto_id' => $id,
+            'nombre' => (string) $producto['nombre'],
+            'foto' => trim((string) ($producto['foto'] ?? '')),
+            'cantidad' => $qty,
+            'precio_final' => $precioFinal,
+            'subtotal' => $subtotal,
+        ];
+    }
+
+    return [
+        'lineas' => $lineas,
+        'total' => $total,
+        'cantidad_total' => $cantidadTotal,
+        'ids_invalidos' => $idsInvalidos,
+    ];
 }
 
 function render_page(string $title, string $content): void

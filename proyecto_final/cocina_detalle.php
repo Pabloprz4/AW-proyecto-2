@@ -4,10 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
 
 $cocinero = require_role('cocinero');
-$pedidoId = (int) ($_GET['id'] ?? 0);
+$pedidoId = get_positive_int('id');
 
-if ($pedidoId <= 0) {
-    flash_set('error', 'Pedido invalido.');
+if ($pedidoId === null) {
+    flash_set('error', 'Pedido inválido.');
     redirect_to('cocina.php');
 }
 
@@ -74,7 +74,7 @@ foreach ($lineas as $linea) {
 }
 
 if ($lineasHtml === '') {
-    $lineasHtml = '<div class="alert cocina-empty">No hay lineas en este pedido.</div>';
+    $lineasHtml = '<div class="alert cocina-empty">No hay líneas en este pedido.</div>';
 }
 
 $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
@@ -120,10 +120,10 @@ elseif ($puedePreparar && $totalLineas > 0 && $lineasPreparadas === $totalLineas
         '</form>';
 }
 elseif ($puedePreparar && $totalLineas === 0) {
-    $accionesPedido = '<span class="badge badge-accion-pendiente">Sin lineas</span>';
+    $accionesPedido = '<span class="badge badge-accion-pendiente">Sin líneas</span>';
 }
 elseif ($puedePreparar) {
-    $accionesPedido = '<span class="badge badge-accion-pendiente">Faltan lineas</span>';
+    $accionesPedido = '<span class="badge badge-accion-pendiente">Faltan líneas</span>';
 }
 elseif ($estado === 'cocinando') {
     $accionesPedido = '<span class="badge badge-accion-bloqueada">Otro cocinero</span>';
@@ -140,7 +140,7 @@ $contenido = <<<HTML
         <div>
           <span class="cocina-card-label">Pedido de cocina</span>
           <h2 class="cocina-detalle-title">#{id}</h2>
-          <span class="cocina-pedido-numero">Numero dia {numero_visible}</span>
+          <span class="cocina-pedido-numero">Número día {numero_visible}</span>
         </div>
         {estado_badge}
       </div>
@@ -162,7 +162,7 @@ $contenido = <<<HTML
 <section class="card cocina-progreso-card">
   <div class="cocina-progreso-header">
     <div>
-      <span class="cocina-card-label">Progreso de lineas</span>
+      <span class="cocina-card-label">Progreso de líneas</span>
       <strong>{lineas_preparadas}/{lineas_totales} preparadas</strong>
     </div>
     <span class="cocina-progreso-numero">{progreso_porcentaje}%</span>
@@ -172,7 +172,7 @@ $contenido = <<<HTML
 </section>
 
 <section class="cocina-panel">
-  <h3>Lineas del pedido</h3>
+  <h3>Líneas del pedido</h3>
   <div class="grid cocina-lineas-grid">{$lineasHtml}</div>
   <p><a class="btn" href="{volver}">Volver al panel de cocina</a></p>
 </section>

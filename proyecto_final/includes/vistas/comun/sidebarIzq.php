@@ -29,6 +29,7 @@ elseif ($usuarioLogueado) {
 
 			<?php if ($rolActual === 'cliente'): ?>
 				<li><a href="<?= $app->resuelve('/pedido_nuevo.php')?>">Crear pedido</a></li>
+				<li><a href="<?= $app->resuelve('/carrito.php')?>">Carrito</a></li>
 				<li><a href="<?= $app->resuelve('/mis_pedidos.php')?>">Mis pedidos</a></li>
 			<?php endif; ?>
 
@@ -41,9 +42,9 @@ elseif ($usuarioLogueado) {
 			<?php endif; ?>
 
 			<?php if ($rolActual === 'gerente'): ?>
-				<li><a href="<?= $app->resuelve('/usuarios.php')?>">Gestion usuarios</a></li>
-				<li><a href="<?= $app->resuelve('/categorias.php')?>">Gestion categorias</a></li>
-				<li><a href="<?= $app->resuelve('/productos.php')?>">Gestion productos</a></li>
+				<li><a href="<?= $app->resuelve('/usuarios.php')?>">Gestión usuarios</a></li>
+				<li><a href="<?= $app->resuelve('/categorias.php')?>">Gestión categorías</a></li>
+				<li><a href="<?= $app->resuelve('/productos.php')?>">Gestión productos</a></li>
 				<li><a href="<?= $app->resuelve('/pedidos.php')?>">Pedidos gerente</a></li>
 			<?php endif; ?>
 		<?php endif; ?>

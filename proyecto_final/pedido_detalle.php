@@ -4,10 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
 
 $usuario = require_login();
-$pedidoId = (int) ($_GET['id'] ?? 0);
+$pedidoId = get_positive_int('id');
 
-if ($pedidoId <= 0) {
-    flash_set('error', 'Pedido invalido.');
+if ($pedidoId === null) {
+    flash_set('error', 'Pedido inválido.');
     redirect_to('mis_pedidos.php');
 }
 
@@ -43,12 +43,12 @@ foreach ($lineas as $linea) {
         '<td>' . (int) $linea['cantidad'] . '</td>' .
         '<td>' . h(money_eur((float) $linea['precio_final_unitario'])) . '</td>' .
         '<td>' . h(money_eur((float) $linea['subtotal'])) . '</td>' .
-        '<td>' . ($estaPreparada ? 'Si' : 'No') . '</td>' .
+        '<td>' . ($estaPreparada ? 'Sí' : 'No') . '</td>' .
         '</tr>';
 }
 
 if ($filas === '') {
-    $filas = '<tr><td colspan="5">No hay lineas en este pedido.</td></tr>';
+    $filas = '<tr><td colspan="5">No hay líneas en este pedido.</td></tr>';
 }
 
 $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
@@ -63,9 +63,9 @@ if ($cocineroAsignado === '') {
 }
 
 $estadoCocinaTexto = match ($estadoCocina) {
-    'nuevo' => 'Pedido en creacion (carrito)',
-    'recibido' => 'Recibido, aun no enviado a cocina',
-    'en_preparacion' => 'En preparacion, pendiente de que lo tome cocina',
+    'nuevo' => 'Pedido en creación (carrito)',
+    'recibido' => 'Recibido, aún no enviado a cocina',
+    'en_preparacion' => 'En preparación, pendiente de que lo tome cocina',
     'cocinando' => 'Cocinando actualmente',
     'listo_cocina' => 'Cocina finalizada, pendiente de camarero',
     'terminado' => 'Preparado para entrega',
@@ -86,7 +86,7 @@ if ($esGerente) {
   <ul>
     <li><strong>Estado de cocina:</strong> {estado_cocina_texto}</li>
     <li><strong>Cocinero asignado:</strong> {cocinero_asignado}</li>
-    <li><strong>Progreso de lineas:</strong> {lineas_preparadas}/{lineas_totales} ({progreso_porcentaje}%)</li>
+    <li><strong>Progreso de líneas:</strong> {lineas_preparadas}/{lineas_totales} ({progreso_porcentaje}%)</li>
   </ul>
   <p>
     <progress max="100" value="{progreso_porcentaje}">{progreso_porcentaje}%</progress>
@@ -104,12 +104,12 @@ $contenido = <<<HTML
   <h2>Detalle de pedido</h2>
   <ul>
     <li><strong>ID:</strong> {id}</li>
-    <li><strong>Numero del dia:</strong> {numero_visible}</li>
+    <li><strong>Número del día:</strong> {numero_visible}</li>
     <li><strong>Fecha/hora:</strong> {fecha_pedido}</li>
     <li><strong>Cliente:</strong> {cliente}</li>
     <li><strong>Estado:</strong> {estado}</li>
     <li><strong>Tipo:</strong> {tipo}</li>
-    <li><strong>Metodo de pago:</strong> {metodo_pago}</li>
+    <li><strong>Método de pago:</strong> {metodo_pago}</li>
     <li><strong>Total:</strong> {total}</li>
   </ul>
 </section>
@@ -117,7 +117,7 @@ $contenido = <<<HTML
 {bloque_cocina}
 
 <section>
-  <h3>Lineas del pedido</h3>
+  <h3>Líneas del pedido</h3>
   <table class="table">
     <thead>
       <tr>

@@ -13,7 +13,7 @@ if ($usuario === null) {
 <section>
   <h1>Panel principal</h1>
   <p>Bienvenido/a a BistrO FDI.</p>
-  <p>Para acceder a las funcionalidades del prototipo inicia sesion o crea una cuenta.</p>
+  <p>Para acceder a las funcionalidades del prototipo inicia sesión o crea una cuenta.</p>
   <p>
     <a href="{$login}">Login</a> |
     <a href="{$registro}">Registro</a>
@@ -23,9 +23,9 @@ if ($usuario === null) {
 <section>
   <h2>Estado del prototipo</h2>
   <ul>
-    <li>Funcionalidad 0: gestion de usuarios y perfil.</li>
-    <li>Funcionalidad 1: gestion de categorias y productos.</li>
-    <li>Funcionalidad 2: gestion de pedidos (cliente, camarero y gerente).</li>
+    <li>Funcionalidad 0: gestión de usuarios y perfil.</li>
+    <li>Funcionalidad 1: gestión de categorías y productos.</li>
+    <li>Funcionalidad 2: gestión de pedidos (cliente, camarero y gerente).</li>
   </ul>
 </section>
 HTML;
@@ -45,6 +45,7 @@ $rolActual = (string) ($usuario['rol'] ?? '');
 $bloqueCliente = '';
 if ($rolActual === 'cliente') {
     $bloqueCliente = '<li><a href="' . h(base_url('pedido_nuevo.php')) . '">Crear pedido (funcionalidad 2)</a></li>';
+    $bloqueCliente .= '<li><a href="' . h(base_url('carrito.php')) . '">Ver carrito (funcionalidad 2)</a></li>';
     $bloqueCliente .= '<li><a href="' . h(base_url('mis_pedidos.php')) . '">Consultar mis pedidos (funcionalidad 2)</a></li>';
 }
 
@@ -60,9 +61,9 @@ if ($rolActual === 'cocinero') {
 
 $bloqueGerente = '';
 if ($rolActual === 'gerente') {
-    $bloqueGerente .= '<li><a href="' . h(base_url('usuarios.php')) . '">Gestion de usuarios (funcionalidad 0)</a></li>';
-    $bloqueGerente .= '<li><a href="' . h(base_url('categorias.php')) . '">Gestion de categorias (funcionalidad 1)</a></li>';
-    $bloqueGerente .= '<li><a href="' . h(base_url('productos.php')) . '">Gestion de productos (funcionalidad 1)</a></li>';
+    $bloqueGerente .= '<li><a href="' . h(base_url('usuarios.php')) . '">Gestión de usuarios (funcionalidad 0)</a></li>';
+    $bloqueGerente .= '<li><a href="' . h(base_url('categorias.php')) . '">Gestión de categorías (funcionalidad 1)</a></li>';
+    $bloqueGerente .= '<li><a href="' . h(base_url('productos.php')) . '">Gestión de productos (funcionalidad 1)</a></li>';
     $bloqueGerente .= '<li><a href="' . h(base_url('pedidos.php')) . '">Consulta de pedidos (funcionalidad 2)</a></li>';
 }
 
@@ -84,10 +85,10 @@ $contenidoPrincipal = <<<HTML
 <section>
   <h2>Estado del prototipo</h2>
   <ul>
-    <li>Funcionalidad 0: gestion de usuarios y perfil.</li>
-    <li>Funcionalidad 1: gestion de categorias y productos.</li>
-    <li>Funcionalidad 2: gestion de pedidos (cliente, camarero y gerente).</li>
-    <li>Funcionalidad 3: preparacion en cocina (cocinero).</li>
+    <li>Funcionalidad 0: gestión de usuarios y perfil.</li>
+    <li>Funcionalidad 1: gestión de categorías y productos.</li>
+    <li>Funcionalidad 2: gestión de pedidos (cliente, camarero y gerente).</li>
+    <li>Funcionalidad 3: preparación en cocina (cocinero).</li>
   </ul>
 </section>
 HTML;

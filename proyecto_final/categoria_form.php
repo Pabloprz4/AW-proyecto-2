@@ -5,7 +5,12 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $gestor = require_role('gerente');
 
-$id = (int) ($_GET['id'] ?? 0);
+$id = isset($_GET['id']) ? get_positive_int('id') : null;
+if (isset($_GET['id']) && $id === null) {
+    flash_set('error', 'ID de categoría inválido.');
+    redirect_to('categorias.php');
+}
+$id = $id ?? 0;
 $esEdicion = $id > 0;
 $categoriaEditar = $esEdicion ? CategoriaRepository::findById($id) : null;
 
@@ -22,7 +27,7 @@ $datos = [
 
 if (is_post()) {
     foreach ($datos as $campo => $_) {
-        $datos[$campo] = trim((string) ($_POST[$campo] ?? ''));
+        $datos[$campo] = post_trimmed_string($campo);
     }
 
     if (!verify_csrf()) {
@@ -100,4 +105,3 @@ $contenido = str_replace(
 
 
 render_page($titulo, $contenido);
-

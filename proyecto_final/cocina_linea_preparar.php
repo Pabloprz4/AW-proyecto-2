@@ -6,15 +6,15 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $cocinero = require_role('cocinero');
 
 if (!is_post() || !verify_csrf()) {
-    flash_set('error', 'Peticion invalida.');
+    flash_set('error', 'Petición inválida.');
     redirect_to('cocina.php');
 }
 
-$pedidoId = (int) ($_POST['pedido_id'] ?? 0);
-$lineaId = (int) ($_POST['linea_id'] ?? 0);
+$pedidoId = post_positive_int('pedido_id');
+$lineaId = post_positive_int('linea_id');
 
-if ($pedidoId <= 0 || $lineaId <= 0) {
-    flash_set('error', 'Datos de linea invalidos.');
+if ($pedidoId === null || $lineaId === null) {
+    flash_set('error', 'Datos de línea inválidos.');
     redirect_to('cocina.php');
 }
 
@@ -25,12 +25,12 @@ if (!$pedido) {
 }
 
 if ((string) $pedido['estado'] !== 'cocinando') {
-    flash_set('error', 'El pedido no esta en estado cocinando.');
+    flash_set('error', 'El pedido no está en estado cocinando.');
     redirect_to('cocina_detalle.php?id=' . $pedidoId);
 }
 
 if ((int) ($pedido['cocinero_id'] ?? 0) !== (int) $cocinero['id']) {
-    flash_set('error', 'Solo el cocinero asignado puede preparar lineas.');
+    flash_set('error', 'Solo el cocinero asignado puede preparar líneas.');
     redirect_to('cocina_detalle.php?id=' . $pedidoId);
 }
 
@@ -44,21 +44,20 @@ foreach ($lineas as $linea) {
 }
 
 if ($lineaObjetivo === null) {
-    flash_set('error', 'Linea no encontrada para ese pedido.');
+    flash_set('error', 'Línea no encontrada para ese pedido.');
     redirect_to('cocina_detalle.php?id=' . $pedidoId);
 }
 
 if ((int) ($lineaObjetivo['preparado'] ?? 0) === 1) {
-    flash_set('ok', 'La linea ya estaba marcada como preparada.');
+    flash_set('ok', 'La línea ya estaba marcada como preparada.');
     redirect_to('cocina_detalle.php?id=' . $pedidoId);
 }
 
 $ok = PedidoRepository::marcarLineaPreparada($lineaId, $pedidoId);
 if ($ok) {
-    flash_set('ok', 'Linea marcada como preparada.');
+    flash_set('ok', 'Línea marcada como preparada.');
 } else {
-    flash_set('error', 'No se pudo actualizar la linea.');
+    flash_set('error', 'No se pudo actualizar la línea.');
 }
 
 redirect_to('cocina_detalle.php?id=' . $pedidoId);
-

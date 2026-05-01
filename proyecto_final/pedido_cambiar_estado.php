@@ -6,38 +6,57 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $camarero = require_exact_role('camarero');
 
 if (!is_post() || !verify_csrf()) {
-    flash_set('error', 'Peticion invalida.');
+    flash_set('error', 'Petición inválida.');
     redirect_to('pedidos_camarero.php');
 }
 
-$pedidoId = (int) ($_POST['id'] ?? 0);
-$accion = (string) ($_POST['accion'] ?? '');
+$pedidoId = post_positive_int('id');
+$accion = post_enum('accion', ['cobrar', 'preparar_entrega', 'entregar']);
 
-if ($pedidoId <= 0) {
-    flash_set('error', 'ID de pedido invalido.');
+if ($pedidoId === null) {
+    flash_set('error', 'ID de pedido inválido.');
     redirect_to('pedidos_camarero.php');
 }
 
-$ok = false;
-if ($accion === 'cobrar') {
-    $ok = PedidoRepository::marcarEnPreparacion($pedidoId, (int) $camarero['id']);
-    $mensajeOk = 'Pedido cobrado. Estado actualizado a En preparacion.';
-}
-elseif ($accion === 'preparar_entrega') {
-    $ok = PedidoRepository::marcarTerminado($pedidoId, (int) $camarero['id']);
-    $mensajeOk = 'Pedido preparado para entregar. Estado actualizado a Terminado.';
-}
-elseif ($accion === 'entregar') {
-    $ok = PedidoRepository::marcarEntregado($pedidoId, (int) $camarero['id']);
-    $mensajeOk = 'Pedido entregado correctamente.';
-}
-else {
-    flash_set('error', 'Accion invalida.');
+if ($accion === null) {
+    flash_set('error', 'Acción inválida.');
     redirect_to('pedidos_camarero.php');
 }
+
+$pedido = PedidoRepository::findById($pedidoId);
+if (!$pedido) {
+    flash_set('error', 'Pedido no encontrado.');
+    redirect_to('pedidos_camarero.php');
+}
+
+$estadoActual = (string) $pedido['estado'];
+$acciones = [
+    'cobrar' => [
+        'estado' => 'recibido',
+        'mensaje_ok' => 'Pedido cobrado. Estado actualizado a En preparación.',
+        'handler' => static fn (): bool => PedidoRepository::marcarEnPreparacion($pedidoId, (int) $camarero['id']),
+    ],
+    'preparar_entrega' => [
+        'estado' => 'listo_cocina',
+        'mensaje_ok' => 'Pedido preparado para entregar. Estado actualizado a Terminado.',
+        'handler' => static fn (): bool => PedidoRepository::marcarTerminado($pedidoId, (int) $camarero['id']),
+    ],
+    'entregar' => [
+        'estado' => 'terminado',
+        'mensaje_ok' => 'Pedido entregado correctamente.',
+        'handler' => static fn (): bool => PedidoRepository::marcarEntregado($pedidoId, (int) $camarero['id']),
+    ],
+];
+
+if ($estadoActual !== $acciones[$accion]['estado']) {
+    flash_set('error', 'El pedido no está en el estado esperado para esa acción.');
+    redirect_to('pedidos_camarero.php');
+}
+
+$ok = $acciones[$accion]['handler']();
 
 if ($ok) {
-    flash_set('ok', $mensajeOk);
+    flash_set('ok', $acciones[$accion]['mensaje_ok']);
 } else {
     flash_set('error', 'No se pudo cambiar el estado del pedido. Verifica el estado actual.');
 }

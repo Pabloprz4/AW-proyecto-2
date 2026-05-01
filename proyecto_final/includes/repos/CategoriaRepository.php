@@ -48,12 +48,10 @@ final class CategoriaRepository
     public static function delete(int $id): bool
     {
         try {
-            // Intentamos borrarla , si tiene productos asociados, la base de datos 
-            // dará error (por el ON DELETE RESTRICT) y devuelve false
             $stmt = db()->prepare('DELETE FROM categorias WHERE id = :id');
             return $stmt->execute(['id' => $id]);
         } catch (PDOException $e) {
-            return false; 
+            return false;
         }
     }
 }

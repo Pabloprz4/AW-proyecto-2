@@ -6,13 +6,23 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $usuario = require_login();
 
 if (!is_post() || !verify_csrf()) {
-    flash_set('error', 'Peticion invalida.');
+    flash_set('error', 'Petición inválida.');
     redirect_to('mis_pedidos.php');
 }
 
-$id = (int) ($_POST['id'] ?? 0);
-if ($id <= 0) {
-    flash_set('error', 'ID de pedido invalido.');
+$id = post_positive_int('id');
+if ($id === null) {
+    flash_set('error', 'ID de pedido inválido.');
+    redirect_to('mis_pedidos.php');
+}
+
+$pedido = PedidoRepository::findById($id);
+if (
+    !$pedido
+    || (int) ($pedido['cliente_id'] ?? 0) !== (int) $usuario['id']
+    || !in_array((string) $pedido['estado'], ['nuevo', 'recibido'], true)
+) {
+    flash_set('error', 'No se pudo cancelar el pedido.');
     redirect_to('mis_pedidos.php');
 }
 

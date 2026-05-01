@@ -64,12 +64,12 @@ $contenido = <<<HTML
 
 <section>
   <h3>Pedidos en seguimiento</h3>
-  <p>Estados relevantes: Nuevo, Recibido, En preparacion, Cocinando, Listo cocina, Terminado.</p>
+  <p>Estados relevantes: Nuevo, Recibido, En preparación, Cocinando, Listo cocina, Terminado.</p>
   <table class="table">
     <thead>
       <tr>
         <th>ID</th>
-        <th>Numero dia</th>
+        <th>Número día</th>
         <th>Fecha</th>
         <th>Tipo</th>
         <th>Estado</th>
@@ -84,12 +84,12 @@ $contenido = <<<HTML
 </section>
 
 <section>
-  <h3>Historico de pedidos</h3>
+  <h3>Histórico de pedidos</h3>
   <table class="table">
     <thead>
       <tr>
         <th>ID</th>
-        <th>Numero dia</th>
+        <th>Número día</th>
         <th>Fecha</th>
         <th>Tipo</th>
         <th>Estado</th>

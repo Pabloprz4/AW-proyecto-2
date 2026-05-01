@@ -5,7 +5,12 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $gestor = require_role('gerente');
 
-$id = (int) ($_GET['id'] ?? 0);
+$id = isset($_GET['id']) ? get_positive_int('id') : null;
+if (isset($_GET['id']) && $id === null) {
+    flash_set('error', 'ID de usuario inválido.');
+    redirect_to('usuarios.php');
+}
+$id = $id ?? 0;
 $esEdicion = $id > 0;
 $usuarioEditar = $esEdicion ? UsuarioRepository::findById($id) : null;
 
@@ -26,22 +31,22 @@ $datos = [
 
 if (is_post()) {
     foreach ($datos as $campo => $_) {
-        $datos[$campo] = trim((string) ($_POST[$campo] ?? ''));
+        $datos[$campo] = post_trimmed_string($campo);
     }
 
-    $password = (string) ($_POST['password'] ?? '');
-    $password2 = (string) ($_POST['password2'] ?? '');
+    $password = post_string('password');
+    $password2 = post_string('password2');
 
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF invalido.';
+        $errores[] = 'Token CSRF inválido.';
     }
 
     if (!preg_match('/^[a-zA-Z0-9._-]{3,30}$/', $datos['nombre_usuario'])) {
-        $errores[] = 'Nombre de usuario invalido.';
+        $errores[] = 'Nombre de usuario inválido.';
     }
 
     if (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
-        $errores[] = 'Email invalido.';
+        $errores[] = 'Email inválido.';
     }
 
     if ($datos['nombre'] === '' || $datos['apellidos'] === '') {
@@ -49,19 +54,23 @@ if (is_post()) {
     }
 
     if (!in_array($datos['rol'], ['cliente', 'camarero', 'cocinero', 'gerente'], true)) {
-        $errores[] = 'Rol invalido.';
+        $errores[] = 'Rol inválido.';
+    }
+
+    if (!in_array($datos['activo'], ['0', '1'], true)) {
+        $errores[] = 'Estado de usuario inválido.';
     }
 
     if (!$esEdicion && strlen($password) < 6) {
-        $errores[] = 'Para crear usuario, la contrasena debe tener al menos 6 caracteres.';
+        $errores[] = 'Para crear usuario, la contraseña debe tener al menos 6 caracteres.';
     }
 
     if ($password !== '' && strlen($password) < 6) {
-        $errores[] = 'La contrasena debe tener al menos 6 caracteres.';
+        $errores[] = 'La contraseña debe tener al menos 6 caracteres.';
     }
 
     if ($password !== $password2) {
-        $errores[] = 'Las contrasenas no coinciden.';
+        $errores[] = 'Las contraseñas no coinciden.';
     }
 
     $excludeId = $esEdicion ? $id : null;
@@ -75,6 +84,10 @@ if (is_post()) {
 
     if ($esEdicion && $id === (int) $gestor['id'] && $datos['rol'] !== 'gerente') {
         $errores[] = 'No puedes quitarte a ti mismo el rol de gerente.';
+    }
+
+    if ($esEdicion && $id === (int) $gestor['id'] && $datos['activo'] !== '1') {
+        $errores[] = 'No puedes desactivar tu propio usuario.';
     }
 
     if (!$errores) {
@@ -162,11 +175,11 @@ $contenido = <<<HTML
       <select id="activo" name="activo">{$opcionesActivo}</select>
     </p>
     <p>
-      <label for="password">Contrasena {pw_hint}:</label><br>
+      <label for="password">Contraseña {pw_hint}:</label><br>
       <input type="password" id="password" name="password">
     </p>
     <p>
-      <label for="password2">Repetir contrasena:</label><br>
+      <label for="password2">Repetir contraseña:</label><br>
       <input type="password" id="password2" name="password2">
     </p>
     <p>
@@ -177,7 +190,7 @@ $contenido = <<<HTML
 </section>
 HTML;
 
-$pwHint = $esEdicion ? '(dejar vacia para no cambiarla)' : '(obligatoria, minimo 6 caracteres)';
+$pwHint = $esEdicion ? '(dejar vacía para no cambiarla)' : '(obligatoria, mínimo 6 caracteres)';
 
 $contenido = str_replace(
     ['{action}', '{csrf}', '{nombre_usuario}', '{email}', '{nombre}', '{apellidos}', '{volver}', '{pw_hint}'],

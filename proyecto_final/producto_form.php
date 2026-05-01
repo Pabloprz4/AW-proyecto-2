@@ -5,7 +5,12 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $gestor = require_role('gerente');
 
-$id = (int) ($_GET['id'] ?? 0);
+$id = isset($_GET['id']) ? get_positive_int('id') : null;
+if (isset($_GET['id']) && $id === null) {
+    flash_set('error', 'ID de producto inválido.');
+    redirect_to('productos.php');
+}
+$id = $id ?? 0;
 $esEdicion = $id > 0;
 $productoEditar = $esEdicion ? ProductoRepository::findById($id) : null;
 
@@ -14,11 +19,14 @@ if ($esEdicion && !$productoEditar) {
     redirect_to('productos.php');
 }
 
-// conseguir las categorías para el desplegable
 $categorias = CategoriaRepository::all();
 if (empty($categorias)) {
     flash_set('error', 'Debes crear al menos una categoría antes de crear un producto.');
     redirect_to('categorias.php');
+}
+$categoriasPorId = [];
+foreach ($categorias as $categoria) {
+    $categoriasPorId[(int) $categoria['id']] = $categoria;
 }
 
 $errores = [];
@@ -39,51 +47,82 @@ $imagenesActuales = $esEdicion ? ProductoRepository::imagesByProducto($id) : [];
 
 if (is_post()) {
     foreach ($datos as $campo => $_) {
-        $datos[$campo] = trim((string) ($_POST[$campo] ?? ''));
+        $datos[$campo] = post_trimmed_string($campo);
     }
 
     if (!verify_csrf()) {
         $errores[] = 'Token CSRF inválido.';
     }
 
+    $categoriaId = request_positive_int($datos, 'categoria_id');
+    if ($categoriaId === null || !isset($categoriasPorId[$categoriaId])) {
+        $errores[] = 'Categoría inválida.';
+    } else {
+        $datos['categoria_id'] = (string) $categoriaId;
+    }
+
     if ($datos['nombre'] === '') {
         $errores[] = 'El nombre del producto es obligatorio.';
     }
-    
-    if (!is_numeric($datos['precio']) || (float) $datos['precio'] < 0) {
-        $errores[] = 'El precio debe ser un número válido.';
+
+    $precio = str_replace(',', '.', $datos['precio']);
+    if (!preg_match('/^[0-9]+(?:\.[0-9]{1,2})?$/', $precio) || (float) $precio <= 0) {
+        $errores[] = 'El precio debe ser un número válido mayor que cero.';
+    } else {
+        $datos['precio'] = number_format((float) $precio, 2, '.', '');
     }
 
     if (!in_array($datos['disponible'], ['0', '1'], true)) {
-        $errores[] = 'El estado de disponibilidad no es valido.';
+        $errores[] = 'El estado de disponibilidad no es válido.';
     }
 
     if (!in_array($datos['ofertado'], ['0', '1'], true)) {
-        $errores[] = 'El estado de oferta no es valido.';
+        $errores[] = 'El estado de oferta no es válido.';
     }
 
-    if (!in_array($datos['iva'], ['4', '4.00', '10', '10.00', '21', '21.00'], true)) {
+    $ivaPermitidos = ['4' => '4.00', '4.00' => '4.00', '10' => '10.00', '10.00' => '10.00', '21' => '21.00', '21.00' => '21.00'];
+    if (!isset($ivaPermitidos[$datos['iva']])) {
         $errores[] = 'El IVA debe ser 4, 10 o 21.';
+    } else {
+        $datos['iva'] = $ivaPermitidos[$datos['iva']];
     }
 
     $nuevasRutas = [];
+    $maxUploadBytes = 3 * 1024 * 1024;
     $fotosUpload = $_FILES['fotos'] ?? null;
-    if (is_array($fotosUpload) && isset($fotosUpload['name']) && is_array($fotosUpload['name'])) {
+    if (
+        !$errores
+        && is_array($fotosUpload)
+        && isset($fotosUpload['name'], $fotosUpload['error'], $fotosUpload['tmp_name'], $fotosUpload['size'])
+        && is_array($fotosUpload['name'])
+        && is_array($fotosUpload['error'])
+        && is_array($fotosUpload['tmp_name'])
+        && is_array($fotosUpload['size'])
+    ) {
         $total = count($fotosUpload['name']);
         for ($i = 0; $i < $total; $i++) {
-            $error = (int) ($fotosUpload['error'][$i] ?? UPLOAD_ERR_NO_FILE);
+            $errorValue = $fotosUpload['error'][$i] ?? UPLOAD_ERR_NO_FILE;
+            $error = is_array($errorValue) ? UPLOAD_ERR_NO_FILE : (int) $errorValue;
             if ($error === UPLOAD_ERR_NO_FILE) {
                 continue;
             }
 
             if ($error !== UPLOAD_ERR_OK) {
-                $errores[] = 'Error al subir una de las imagenes.';
+                $errores[] = 'Error al subir una de las imágenes.';
                 continue;
             }
 
-            $tmp = (string) ($fotosUpload['tmp_name'][$i] ?? '');
-            if ($tmp === '') {
+            $tmpValue = $fotosUpload['tmp_name'][$i] ?? '';
+            $tmp = is_array($tmpValue) ? '' : (string) $tmpValue;
+            $sizeValue = $fotosUpload['size'][$i] ?? 0;
+            $size = is_array($sizeValue) ? 0 : (int) $sizeValue;
+            if ($tmp === '' || !is_uploaded_file($tmp)) {
                 $errores[] = 'No se pudo procesar una imagen subida.';
+                continue;
+            }
+
+            if ($size <= 0 || $size > $maxUploadBytes) {
+                $errores[] = 'Cada imagen debe pesar como máximo 3 MB.';
                 continue;
             }
 
@@ -98,7 +137,7 @@ if (is_post()) {
             };
 
             if ($ext === '') {
-                $errores[] = 'Formato de imagen no valido (solo JPG, PNG o WEBP).';
+                $errores[] = 'Formato de imagen no válido (solo JPG, PNG o WEBP).';
                 continue;
             }
 
@@ -109,7 +148,7 @@ if (is_post()) {
             $fileName = 'p_' . time() . '_' . random_int(100, 999) . '_' . $i . '.' . $ext;
             $destinoFisico = __DIR__ . '/img/' . $fileName;
             if (!move_uploaded_file($tmp, $destinoFisico)) {
-                $errores[] = 'No se pudo guardar una de las imagenes.';
+                $errores[] = 'No se pudo guardar una de las imágenes.';
                 continue;
             }
 
@@ -119,6 +158,7 @@ if (is_post()) {
 
     $idsBorrar = $_POST['delete_images'] ?? [];
     if (!is_array($idsBorrar)) {
+        $errores[] = 'Selección de imágenes inválida.';
         $idsBorrar = [];
     }
 
@@ -128,19 +168,31 @@ if (is_post()) {
     }
 
     $idsBorrarLimpios = [];
+    $idsBorrarInvalidos = false;
     foreach ($idsBorrar as $idBorrar) {
+        if (is_array($idBorrar) || !preg_match('/^[1-9][0-9]*$/', (string) $idBorrar)) {
+            $idsBorrarInvalidos = true;
+            continue;
+        }
+
         $imgId = (int) $idBorrar;
-        if ($imgId > 0 && in_array($imgId, $idsActuales, true)) {
+        if (in_array($imgId, $idsActuales, true)) {
             $idsBorrarLimpios[] = $imgId;
+        } else {
+            $idsBorrarInvalidos = true;
         }
     }
     $idsBorrarLimpios = array_values(array_unique($idsBorrarLimpios));
 
-    if (!$esEdicion && count($nuevasRutas) === 0) {
+    if ($idsBorrarInvalidos) {
+        $errores[] = 'Selección de imágenes inválida.';
+    }
+
+    if (!$errores && !$esEdicion && count($nuevasRutas) === 0) {
         $errores[] = 'Debes subir al menos una imagen para el producto.';
     }
 
-    if ($esEdicion) {
+    if (!$errores && $esEdicion) {
         $imagenesFinales = count($imagenesActuales) - count($idsBorrarLimpios) + count($nuevasRutas);
         if ($imagenesFinales <= 0) {
             $errores[] = 'El producto debe conservar al menos una imagen asociada.';
@@ -179,28 +231,24 @@ if ($errores) {
     $listaErrores = '<ul>' . $items . '</ul>';
 }
 
-// opciones del select de categorías
 $opcionesCategoria = '';
 foreach ($categorias as $cat) {
     $selected = $datos['categoria_id'] === (string) $cat['id'] ? ' selected' : '';
     $opcionesCategoria .= '<option value="' . (int) $cat['id'] . '"' . $selected . '>' . h((string) $cat['nombre']) . '</option>';
 }
 
-// opciones de disponibilidad
 $opcionesDisponible = '';
-foreach (['1' => 'Si (hay stock)', '0' => 'No disponible temporalmente'] as $valor => $texto) {
+foreach (['1' => 'Sí (hay stock)', '0' => 'No disponible temporalmente'] as $valor => $texto) {
     $selected = $datos['disponible'] === (string) $valor ? ' selected' : '';
     $opcionesDisponible .= '<option value="' . h((string) $valor) . '"' . $selected . '>' . h($texto) . '</option>';
 }
 
-// opciones de estado (ofertado o no ofertado)
 $opcionesOfertado = '';
-foreach (['1' => 'Si, mostrar en carta', '0' => 'No (retirado de carta)'] as $valor => $texto) {
+foreach (['1' => 'Sí, mostrar en carta', '0' => 'No (retirado de carta)'] as $valor => $texto) {
     $selected = $datos['ofertado'] === (string) $valor ? ' selected' : '';
     $opcionesOfertado .= '<option value="' . h((string) $valor) . '"' . $selected . '>' . h($texto) . '</option>';
 }
 
-// Si editamos y tiene foto principal, se muestra
 $fotoHtml = '';
 if ($esEdicion && !empty($productoEditar['foto'])) {
     $fotoHtml = '<p>Imagen principal:<br><img src="' . h(base_url((string) $productoEditar['foto'])) . '" alt="Imagen principal" width="120"></p>';
@@ -209,7 +257,7 @@ if ($esEdicion && !empty($productoEditar['foto'])) {
 $galeriaHtml = '';
 if ($esEdicion) {
     if ($imagenesActuales === []) {
-        $galeriaHtml = '<p>No hay imagenes asociadas.</p>';
+        $galeriaHtml = '<p>No hay imágenes asociadas.</p>';
     } else {
         $items = '';
         foreach ($imagenesActuales as $img) {
@@ -222,7 +270,7 @@ if ($esEdicion) {
                 '<img src="' . h(base_url($ruta)) . '" alt="Imagen producto" width="110">' .
                 '</li>';
         }
-        $galeriaHtml = '<h3>Imagenes asociadas</h3><ul>' . $items . '</ul>';
+        $galeriaHtml = '<h3>Imágenes asociadas</h3><ul>' . $items . '</ul>';
     }
 }
 
@@ -233,7 +281,7 @@ $contenido = <<<HTML
   <h2>{$titulo}</h2>
   {$listaErrores}
   {$fotoHtml}
-  <p>Un producto debe tener una o mas imagenes asociadas.</p>
+  <p>Un producto debe tener una o más imágenes asociadas.</p>
   <form method="post" action="{action}" enctype="multipart/form-data">
     {csrf}
     <p>
@@ -263,10 +311,10 @@ $contenido = <<<HTML
     <p>
       <label for="precio_final">Precio final (base + IVA):</label><br>
       <input type="text" id="precio_final" value="" readonly>
-      <small>Se actualiza automaticamente al cambiar precio o IVA.</small>
+      <small>Se actualiza automáticamente al cambiar precio o IVA.</small>
     </p>
     <p>
-      <label for="disponible">¿Esta disponible?</label><br>
+      <label for="disponible">¿Está disponible?</label><br>
       <select id="disponible" name="disponible">{$opcionesDisponible}</select>
     </p>
     <p>
@@ -274,7 +322,7 @@ $contenido = <<<HTML
       <select id="ofertado" name="ofertado">{$opcionesOfertado}</select>
     </p>
     <p>
-      <label for="fotos">Imagenes (JPG, PNG o WEBP):</label><br>
+      <label for="fotos">Imágenes (JPG, PNG o WEBP):</label><br>
       <input type="file" id="fotos" name="fotos[]" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple>
     </p>
     {$galeriaHtml}
