@@ -28,7 +28,17 @@
 
 ## Daniel
 
-- Pendiente.
+- Implementar la funcionalidad 4: gestión de ofertas.
+- Crear el repositorio `OfertaRepository.php` para listar, consultar, crear, actualizar, borrar y cargar ofertas con sus productos asociados.
+- Añadir las pantallas de gerente `ofertas.php`, `oferta_form.php` y `oferta_borrar.php` para gestionar ofertas actuales y pasadas.
+- Crear `FormularioOferta.php` para dar de alta y editar ofertas con nombre, descripción, descuento, fechas y productos/cantidades del pack.
+- Añadir JavaScript en el formulario de ofertas para agregar y eliminar productos dinámicamente.
+- Crear los scripts SQL `schemaOfertas.sql` y `seedOfertas.sql` para la estructura y datos de prueba de ofertas.
+- Integrar las ofertas activas en `carrito.php`, mostrando si son aplicables al carrito actual.
+- Permitir aplicar y quitar una oferta desde el carrito, validando productos y cantidades requeridas.
+- Ajustar el cálculo del carrito y del pedido para reflejar subtotal, descuento aplicado y total final.
+- Actualizar confirmación/pago del pedido para conservar y mostrar los importes derivados de las ofertas.
+- Añadir el acceso a ofertas desde la navegación/panel principal del gerente.
 
 ### Verificación
 
