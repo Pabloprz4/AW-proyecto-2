@@ -17,17 +17,18 @@ final class PedidoRepository
     private const TIPOS = ['local', 'llevar'];
     private const METODOS_PAGO = ['tarjeta', 'camarero'];
 
-    public static function createFromCart(int $clienteId, string $tipo, string $metodoPago, array $items): int
+    public static function createFromCart(array $cart, int $clienteId, string $metodoPago): int
     {
         if ($clienteId <= 0) {
             throw new InvalidArgumentException('Cliente inválido.');
         }
 
+        $items = isset($cart['items']) && is_array($cart['items']) ? $cart['items'] : [];
         if (empty($items)) {
             throw new InvalidArgumentException('El pedido no puede estar vacío.');
         }
 
-        $tipo = self::normalizeTipo($tipo);
+        $tipo = self::normalizeTipo((string) ($cart['tipo'] ?? 'local'));
         $metodoPago = self::normalizeMetodoPago($metodoPago);
         $estadoInicial = $metodoPago === 'tarjeta' ? 'en_preparacion' : 'recibido';
 
@@ -36,20 +37,21 @@ final class PedidoRepository
 
         try {
             $lineas = [];
-            $total = 0.0;
+            $totalSinDescuento = 0.0;
+            $descuentoAplicado = 0.0;
             $stmtProducto = $pdo->prepare(
                 'SELECT id, nombre, precio, iva, ofertado, disponible FROM productos WHERE id = :id LIMIT 1'
             );
 
-            foreach ($items as $item) {
-                $productoId = (int) ($item['producto_id'] ?? 0);
-                $cantidad = (int) ($item['cantidad'] ?? 0);
+            foreach ($items as $productoId => $cantidad) {
+                $id = (int) $productoId;
+                $qty = (int) $cantidad;
 
-                if ($productoId <= 0 || $cantidad <= 0) {
+                if ($id <= 0 || $qty <= 0) {
                     continue;
                 }
 
-                $stmtProducto->execute(['id' => $productoId]);
+                $stmtProducto->execute(['id' => $id]);
                 $producto = $stmtProducto->fetch();
 
                 if (
@@ -63,8 +65,8 @@ final class PedidoRepository
                 $precioBase = (float) $producto['precio'];
                 $iva = (float) $producto['iva'];
                 $precioFinalUnitario = round($precioBase * (1 + ($iva / 100)), 2);
-                $subtotal = round($precioFinalUnitario * $cantidad, 2);
-                $total += $subtotal;
+                $subtotal = round($precioFinalUnitario * $qty, 2);
+                $totalSinDescuento += $subtotal;
 
                 $lineas[] = [
                     'producto_id' => (int) $producto['id'],
@@ -72,7 +74,7 @@ final class PedidoRepository
                     'precio_base' => round($precioBase, 2),
                     'iva' => round($iva, 2),
                     'precio_final_unitario' => $precioFinalUnitario,
-                    'cantidad' => $cantidad,
+                    'cantidad' => $qty,
                     'subtotal' => $subtotal,
                 ];
             }
@@ -80,6 +82,20 @@ final class PedidoRepository
             if (empty($lineas)) {
                 throw new RuntimeException('No hay líneas válidas para crear el pedido.');
             }
+
+            // Aplicar oferta si existe
+            $ofertaAplicada = $cart['oferta_aplicada'] ?? null;
+            if ($ofertaAplicada) {
+                $oferta = OfertaRepository::findByIdWithProducts($ofertaAplicada);
+                if ($oferta) {
+                    $precioPack = OfertaRepository::calculatePackPrice($oferta['productos']);
+                    $descuento = (float) $oferta['descuento'];
+                    $descuentoAplicado = round($precioPack * ($descuento / 100), 2);
+                }
+            }
+
+            $total = $totalSinDescuento - $descuentoAplicado;
+            if ($total < 0) $total = 0;
 
             $fechaDia = date('Y-m-d');
             $stmtNumero = $pdo->prepare(
@@ -109,8 +125,8 @@ final class PedidoRepository
             }
 
             $stmtPedido = $pdo->prepare(
-                'INSERT INTO pedidos (numero_dia, fecha_dia, estado, tipo, metodo_pago, total, cliente_id)
-                 VALUES (:numero_dia, :fecha_dia, :estado, :tipo, :metodo_pago, :total, :cliente_id)'
+                'INSERT INTO pedidos (numero_dia, fecha_dia, estado, tipo, metodo_pago, total, total_sin_descuento, descuento_aplicado, oferta_id, cliente_id)
+                 VALUES (:numero_dia, :fecha_dia, :estado, :tipo, :metodo_pago, :total, :total_sin_descuento, :descuento_aplicado, :oferta_id, :cliente_id)'
             );
 
             $stmtPedido->execute([
@@ -120,6 +136,9 @@ final class PedidoRepository
                 'tipo' => $tipo,
                 'metodo_pago' => $metodoPago,
                 'total' => round($total, 2),
+                'total_sin_descuento' => $descuentoAplicado > 0 ? round($totalSinDescuento, 2) : null,
+                'descuento_aplicado' => $descuentoAplicado > 0 ? round($descuentoAplicado, 2) : null,
+                'oferta_id' => $ofertaAplicada ? (int) $ofertaAplicada : null,
                 'cliente_id' => $clienteId,
             ]);
 

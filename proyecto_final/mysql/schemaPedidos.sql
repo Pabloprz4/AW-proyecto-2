@@ -18,6 +18,9 @@ CREATE TABLE pedidos (
   tipo ENUM('local','llevar') NOT NULL,
   metodo_pago ENUM('tarjeta','camarero') NOT NULL,
   total DECIMAL(10,2) NOT NULL,
+  total_sin_descuento DECIMAL(10,2) DEFAULT NULL,
+  descuento_aplicado DECIMAL(10,2) DEFAULT NULL,
+  oferta_id INT UNSIGNED DEFAULT NULL,
   cliente_id INT UNSIGNED NOT NULL,
   camarero_id INT UNSIGNED DEFAULT NULL,
   cocinero_id INT UNSIGNED DEFAULT NULL, 
@@ -28,9 +31,11 @@ CREATE TABLE pedidos (
   KEY idx_pedidos_estado (estado),
   KEY idx_pedidos_camarero (camarero_id),
   KEY idx_pedidos_cocinero (cocinero_id), 
+  KEY idx_pedidos_oferta (oferta_id),
   CONSTRAINT fk_pedidos_cliente FOREIGN KEY (cliente_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
   CONSTRAINT fk_pedidos_camarero FOREIGN KEY (camarero_id) REFERENCES usuarios(id) ON DELETE SET NULL,
-  CONSTRAINT fk_pedidos_cocinero FOREIGN KEY (cocinero_id) REFERENCES usuarios(id) ON DELETE SET NULL 
+  CONSTRAINT fk_pedidos_cocinero FOREIGN KEY (cocinero_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_pedidos_oferta FOREIGN KEY (oferta_id) REFERENCES ofertas(id) ON DELETE SET NULL 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE pedido_lineas (

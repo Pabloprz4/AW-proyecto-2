@@ -249,6 +249,7 @@ function pedido_cart_get(): array
         return [
             'tipo' => 'local',
             'items' => [],
+            'oferta_aplicada' => null,
         ];
     }
 
@@ -268,6 +269,7 @@ function pedido_cart_get(): array
     return [
         'tipo' => $tipo,
         'items' => $items,
+        'oferta_aplicada' => $cart['oferta_aplicada'] ?? null,
     ];
 }
 
@@ -289,6 +291,7 @@ function pedido_cart_save(array $cart): void
     $_SESSION['pedido_cart'] = [
         'tipo' => $tipo,
         'items' => $items,
+        'oferta_aplicada' => $cart['oferta_aplicada'] ?? null,
     ];
 }
 
@@ -303,6 +306,7 @@ function pedido_cart_resolve(array $cart): array
     $total = 0.0;
     $cantidadTotal = 0;
     $idsInvalidos = [];
+    $descuentoAplicado = 0.0;
 
     $items = isset($cart['items']) && is_array($cart['items']) ? $cart['items'] : [];
 
@@ -341,11 +345,37 @@ function pedido_cart_resolve(array $cart): array
         ];
     }
 
+    // Aplicar oferta si existe
+    $ofertaAplicada = $cart['oferta_aplicada'] ?? null;
+    if ($ofertaAplicada) {
+        $oferta = \OfertaRepository::findByIdWithProducts($ofertaAplicada);
+        if ($oferta) {
+            
+            $vecesAplicables = PHP_INT_MAX;
+            foreach ($oferta['productos'] as $prod) {
+                $prodId = (string) $prod['producto_id'];
+                $requerido = (int) $prod['cantidad'];
+                $disponible = (int) ($cart['items'][$prodId] ?? 0);
+                $veces = floor($disponible / $requerido);
+                $vecesAplicables = min($vecesAplicables, $veces);
+            }
+            
+            if ($vecesAplicables > 0) {
+                $precioPack = \OfertaRepository::calculatePackPrice($oferta['productos']);
+                $descuento = (float) $oferta['descuento'];
+                $descuentoAplicado = round($precioPack * ($descuento / 100), 2) * $vecesAplicables;
+                $total -= $descuentoAplicado;
+                if ($total < 0) $total = 0;
+            }
+        }
+    }
+
     return [
         'lineas' => $lineas,
         'total' => $total,
         'cantidad_total' => $cantidadTotal,
         'ids_invalidos' => $idsInvalidos,
+        'descuento_aplicado' => $descuentoAplicado,
     ];
 }
 

@@ -69,10 +69,9 @@ if (is_post()) {
     if (!$errores) {
         try {
             $pedidoId = PedidoRepository::createFromCart(
+                $cart,
                 (int) $usuario['id'],
-                (string) $cart['tipo'],
-                $metodoPago,
-                $lineasValidas
+                $metodoPago
             );
 
             pedido_cart_clear();

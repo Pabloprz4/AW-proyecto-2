@@ -8,7 +8,7 @@ $cart = pedido_cart_get();
 $errores = [];
 
 if (is_post()) {
-    $accion = post_enum('accion', ['set_tipo', 'update_cart', 'clear_cart', 'checkout']);
+    $accion = post_enum('accion', ['set_tipo', 'update_cart', 'clear_cart', 'checkout', 'apply_offer', 'remove_offer']);
 
     if (!verify_csrf()) {
         $errores[] = 'Token CSRF inválido.';
@@ -90,6 +90,45 @@ if (is_post()) {
                 redirect_to('pedido_pago.php');
             }
         }
+
+        if ($accion === 'apply_offer') {
+            $ofertaId = post_positive_int('oferta_id');
+            if ($ofertaId === null) {
+                $errores[] = 'Oferta inválida.';
+            } else {
+                $oferta = OfertaRepository::findByIdWithProducts($ofertaId);
+                if (!$oferta) {
+                    $errores[] = 'Oferta no encontrada.';
+                } else {
+                    // Verificar aplicabilidad
+                    $applicable = true;
+                    foreach ($oferta['productos'] as $prod) {
+                        $prodId = (string) $prod['producto_id'];
+                        $required = (int) $prod['cantidad'];
+                        $available = (int) ($cart['items'][$prodId] ?? 0);
+                        if ($available < $required) {
+                            $applicable = false;
+                            break;
+                        }
+                    }
+                    if (!$applicable) {
+                        $errores[] = 'La oferta no es aplicable al carrito actual.';
+                    } else {
+                        $cart['oferta_aplicada'] = $ofertaId;
+                        pedido_cart_save($cart);
+                        flash_set('ok', 'Oferta aplicada.');
+                        redirect_to('carrito.php');
+                    }
+                }
+            }
+        }
+
+        if ($accion === 'remove_offer') {
+            unset($cart['oferta_aplicada']);
+            pedido_cart_save($cart);
+            flash_set('ok', 'Oferta removida.');
+            redirect_to('carrito.php');
+        }
     }
 }
 
@@ -130,6 +169,59 @@ foreach ($resumenCarrito['lineas'] as $linea) {
 }
 
 $tipoLabel = $cart['tipo'] === 'llevar' ? 'Llevar' : 'Local';
+
+// Ofertas
+$ofertas = OfertaRepository::getActiveOffers();
+$ofertasHtml = '';
+$ofertaAplicada = $cart['oferta_aplicada'] ?? null;
+if ($ofertaAplicada) {
+    $oferta = OfertaRepository::findById($ofertaAplicada);
+    $ofertasHtml .= '<p>Oferta aplicada: ' . h($oferta['nombre']) . ' (' . h($oferta['descuento']) . '% descuento)</p>';
+    $ofertasHtml .= '<form method="post" action="' . h(base_url('carrito.php')) . '" class="inline">';
+    $ofertasHtml .= csrf_field();
+    $ofertasHtml .= '<input type="hidden" name="accion" value="remove_offer">';
+    $ofertasHtml .= '<button class="btn" type="submit">Remover oferta</button>';
+    $ofertasHtml .= '</form>';
+} else {
+    $ofertasHtml .= '<h3>Ofertas disponibles</h3>';
+    if (empty($ofertas)) {
+        $ofertasHtml .= '<p>No hay ofertas activas.</p>';
+    } else {
+        foreach ($ofertas as $o) {
+            $applicable = true;
+            foreach ($o['productos'] as $prod) {
+                $prodId = (string) $prod['producto_id'];
+                $required = (int) $prod['cantidad'];
+                $available = (int) ($cart['items'][$prodId] ?? 0);
+                if ($available < $required) {
+                    $applicable = false;
+                    break;
+                }
+            }
+            $status = $applicable ? 'Aplicable' : 'No aplicable';
+            $productosReq = '';
+            foreach ($o['productos'] as $prod) {
+                $productosReq .= $prod['producto_nombre'] . ' x' . $prod['cantidad'] . ', ';
+            }
+            $productosReq = rtrim($productosReq, ', ');
+            $ofertasHtml .= '<div class="oferta-item">';
+            $ofertasHtml .= '<h4>' . h($o['nombre']) . '</h4>';
+            $ofertasHtml .= '<p>' . h($o['descripcion']) . '</p>';
+            $ofertasHtml .= '<p>Requiere: ' . h($productosReq) . '</p>';
+            $ofertasHtml .= '<p>Descuento: ' . h($o['descuento']) . '%</p>';
+            $ofertasHtml .= '<p>Estado: ' . $status . '</p>';
+            if ($applicable) {
+                $ofertasHtml .= '<form method="post" action="' . h(base_url('carrito.php')) . '" class="inline">';
+                $ofertasHtml .= csrf_field();
+                $ofertasHtml .= '<input type="hidden" name="accion" value="apply_offer">';
+                $ofertasHtml .= '<input type="hidden" name="oferta_id" value="' . $o['id'] . '">';
+                $ofertasHtml .= '<button class="btn btn-primary" type="submit">Aplicar oferta</button>';
+                $ofertasHtml .= '</form>';
+            }
+            $ofertasHtml .= '</div>';
+        }
+    }
+}
 $carritoHtml = '';
 if ($lineasHtml === '') {
     $carritoHtml = '<div class="alert">Tu carrito está vacío.</div>' .
@@ -142,6 +234,8 @@ if ($lineasHtml === '') {
         '<thead><tr><th>Foto</th><th>Producto</th><th>Cantidad (0 elimina)</th><th>Precio unidad</th><th>Subtotal</th></tr></thead>' .
         '<tbody>' . $lineasHtml . '</tbody>' .
         '</table>' .
+        '<p><strong>Subtotal: ' . h(money_eur(array_sum(array_column($resumenCarrito['lineas'], 'subtotal')))) . '</strong></p>' .
+        '<p><strong>Descuento aplicado: -' . h(money_eur($resumenCarrito['descuento_aplicado'])) . '</strong></p>' .
         '<p><strong>Total: ' . h(money_eur((float) $resumenCarrito['total'])) . '</strong></p>' .
         '<div class="actions-inline">' .
         '<button class="btn btn-primary" type="submit">Actualizar carrito</button>' .
@@ -180,6 +274,11 @@ $contenido = <<<HTML
     <button class="btn" type="submit">Guardar tipo</button>
   </form>
   <p>Tipo actual: <strong>{tipo_label}</strong></p>
+</section>
+
+<section>
+  <h2>Ofertas</h2>
+  {$ofertasHtml}
 </section>
 
 <section class="carrito-panel">
