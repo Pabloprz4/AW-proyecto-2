@@ -13,7 +13,7 @@ define('BD_PASS', getenv('BD_PASS') ?: 'Awp3App!123');
  * Parámetros de configuración utilizados para generar las URLs y las rutas a ficheros en la aplicación
  */
 define('RAIZ_APP', __DIR__);
-define('RUTA_APP', getenv('APP_BASE_PATH') ?: '/proyecto_final');
+define('RUTA_APP', getenv('APP_BASE_PATH') ?: '');
 define('RUTA_IMGS', RUTA_APP . '/img/');
 define('RUTA_CSS', RUTA_APP . '/css/');
 define('RUTA_JS', RUTA_APP . '/js/');
