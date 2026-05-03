@@ -7,7 +7,7 @@ $usuario = require_login();
 $pedidoId = get_positive_int('id');
 
 if ($pedidoId === null) {
-    flash_set('error', 'Pedido inválido.');
+    flash_set('error', 'Pedido invalido.');
     redirect_to('index.php');
 }
 
@@ -31,19 +31,23 @@ $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
 $metodoPagoLabel = PedidoRepository::metodoPagoLabel((string) $pedido['metodo_pago']);
 $totalSinDescuento = $pedido['total_sin_descuento'] ? money_eur((float) $pedido['total_sin_descuento']) : null;
 $descuentoAplicado = $pedido['descuento_aplicado'] ? money_eur((float) $pedido['descuento_aplicado']) : null;
+$coinsUsados = (int) ($pedido['bistrocoins_usados'] ?? 0);
+$coinsGanados = (int) ($pedido['bistrocoins_ganados'] ?? 0);
 
 $contenido = <<<HTML
 <section>
-  <h2>Confirmación del pedido</h2>
+  <h2>Confirmacion del pedido</h2>
   <p>Tu pedido se ha registrado correctamente.</p>
   <ul>
     <li><strong>ID interno:</strong> {id}</li>
-    <li><strong>Número de pedido (día actual):</strong> {numero_visible}</li>
+    <li><strong>Numero de pedido (dia actual):</strong> {numero_visible}</li>
     <li><strong>Estado:</strong> {estado}</li>
     <li><strong>Tipo:</strong> {tipo}</li>
-    <li><strong>Método de pago:</strong> {metodo_pago}</li>
+    <li><strong>Metodo de pago:</strong> {metodo_pago}</li>
     {total_sin_descuento}
     {descuento_aplicado}
+    <li><strong>BistroCoins usados:</strong> {coins_usados}</li>
+    <li><strong>BistroCoins ganados por este pedido:</strong> {coins_ganados}</li>
     <li><strong>Total:</strong> {total}</li>
   </ul>
   <p>
@@ -55,7 +59,7 @@ $contenido = <<<HTML
 HTML;
 
 $contenido = str_replace(
-    ['{id}', '{numero_visible}', '{estado}', '{tipo}', '{metodo_pago}', '{total_sin_descuento}', '{descuento_aplicado}', '{total}', '{detalle}', '{nuevo}', '{inicio}'],
+    ['{id}', '{numero_visible}', '{estado}', '{tipo}', '{metodo_pago}', '{total_sin_descuento}', '{descuento_aplicado}', '{coins_usados}', '{coins_ganados}', '{total}', '{detalle}', '{nuevo}', '{inicio}'],
     [
         (string) (int) $pedido['id'],
         $numeroVisible,
@@ -64,6 +68,8 @@ $contenido = str_replace(
         h($metodoPagoLabel),
         $totalSinDescuento ? '<li><strong>Total sin descuento:</strong> ' . $totalSinDescuento . '</li>' : '',
         $descuentoAplicado ? '<li><strong>Descuento aplicado:</strong> ' . $descuentoAplicado . '</li>' : '',
+        (string) $coinsUsados,
+        (string) $coinsGanados,
         h(money_eur((float) $pedido['total'])),
         h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])),
         h(base_url('pedido_nuevo.php')),
@@ -72,4 +78,4 @@ $contenido = str_replace(
     $contenido
 );
 
-render_page('Confirmación del pedido', $contenido);
+render_page('Confirmacion del pedido', $contenido);

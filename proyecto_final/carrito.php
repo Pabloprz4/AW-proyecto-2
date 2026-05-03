@@ -8,17 +8,17 @@ $cart = pedido_cart_get();
 $errores = [];
 
 if (is_post()) {
-    $accion = post_enum('accion', ['set_tipo', 'update_cart', 'clear_cart', 'checkout', 'apply_offer', 'remove_offer']);
+    $accion = post_enum('accion', ['set_tipo', 'update_cart', 'clear_cart', 'checkout', 'apply_offer', 'remove_offer', 'remove_reward']);
 
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF inválido.';
+        $errores[] = 'Token CSRF invalido.';
     } elseif ($accion === null) {
-        $errores[] = 'Acción inválida.';
+        $errores[] = 'Accion invalida.';
     } else {
         if ($accion === 'set_tipo') {
             $tipo = post_enum('tipo', ['local', 'llevar']);
             if ($tipo === null) {
-                $errores[] = 'Tipo de pedido inválido.';
+                $errores[] = 'Tipo de pedido invalido.';
             } else {
                 $cart['tipo'] = $tipo;
                 pedido_cart_save($cart);
@@ -31,7 +31,7 @@ if (is_post()) {
             $cantidades = $_POST['cantidades'] ?? [];
             $cantidadInvalida = false;
             if (!is_array($cantidades)) {
-                $errores[] = 'Cantidades inválidas.';
+                $errores[] = 'Cantidades invalidas.';
                 $cantidadInvalida = true;
                 $cantidades = [];
             }
@@ -67,7 +67,7 @@ if (is_post()) {
             }
 
             if ($cantidadInvalida) {
-                $errores[] = 'El carrito contiene cantidades o productos inválidos.';
+                $errores[] = 'El carrito contiene cantidades o productos invalidos.';
             } else {
                 $cart['items'] = $nuevosItems;
                 pedido_cart_save($cart);
@@ -84,8 +84,9 @@ if (is_post()) {
 
         if ($accion === 'checkout') {
             $resumenValidacion = pedido_cart_resolve($cart);
-            if ($resumenValidacion['lineas'] === [] || $resumenValidacion['ids_invalidos'] !== []) {
-                $errores[] = 'Debes añadir al menos un producto válido al carrito.';
+            $sinElementos = $resumenValidacion['lineas'] === [] && $resumenValidacion['lineas_recompensa'] === [];
+            if ($sinElementos || $resumenValidacion['ids_invalidos'] !== [] || $resumenValidacion['ids_recompensas_invalidas'] !== []) {
+                $errores[] = 'Debes anadir al menos un elemento valido al carrito.';
             } else {
                 redirect_to('pedido_pago.php');
             }
@@ -94,13 +95,12 @@ if (is_post()) {
         if ($accion === 'apply_offer') {
             $ofertaId = post_positive_int('oferta_id');
             if ($ofertaId === null) {
-                $errores[] = 'Oferta inválida.';
+                $errores[] = 'Oferta invalida.';
             } else {
                 $oferta = OfertaRepository::findByIdWithProducts($ofertaId);
                 if (!$oferta) {
                     $errores[] = 'Oferta no encontrada.';
                 } else {
-                    // Verificar aplicabilidad
                     $applicable = true;
                     foreach ($oferta['productos'] as $prod) {
                         $prodId = (string) $prod['producto_id'];
@@ -129,6 +129,18 @@ if (is_post()) {
             flash_set('ok', 'Oferta removida.');
             redirect_to('carrito.php');
         }
+
+        if ($accion === 'remove_reward') {
+            $recompensaId = post_positive_int('recompensa_id');
+            if ($recompensaId === null) {
+                $errores[] = 'Recompensa invalida.';
+            } else {
+                unset($cart['recompensas'][(string) $recompensaId]);
+                pedido_cart_save($cart);
+                flash_set('ok', 'Recompensa eliminada del carrito.');
+                redirect_to('carrito.php');
+            }
+        }
     }
 }
 
@@ -138,9 +150,17 @@ if ($resumenCarrito['ids_invalidos'] !== []) {
     foreach ($resumenCarrito['ids_invalidos'] as $idInvalido) {
         unset($cart['items'][$idInvalido]);
     }
+    $errores[] = 'Se han retirado del carrito productos que ya no estan ofertados o disponibles.';
+}
+if ($resumenCarrito['ids_recompensas_invalidas'] !== []) {
+    foreach ($resumenCarrito['ids_recompensas_invalidas'] as $idInvalido) {
+        unset($cart['recompensas'][$idInvalido]);
+    }
+    $errores[] = 'Se han retirado recompensas que ya no estan disponibles.';
+}
+if ($resumenCarrito['ids_invalidos'] !== [] || $resumenCarrito['ids_recompensas_invalidas'] !== []) {
     pedido_cart_save($cart);
     $resumenCarrito = pedido_cart_resolve($cart);
-    $errores[] = 'Se han retirado del carrito productos que ya no están ofertados o disponibles.';
 }
 
 $listaErrores = '';
@@ -168,6 +188,26 @@ foreach ($resumenCarrito['lineas'] as $linea) {
         '</tr>';
 }
 
+$recompensasHtml = '';
+if ($resumenCarrito['lineas_recompensa'] !== []) {
+    $recompensasHtml .= '<h3>Recompensas en carrito</h3>';
+    $recompensasHtml .= '<div class="grid rewards-grid" id="cart-rewards-grid">';
+    foreach ($resumenCarrito['lineas_recompensa'] as $linea) {
+        $recompensasHtml .= '<article class="card reward-in-cart">' .
+            '<h4>' . h((string) $linea['nombre']) . '</h4>' .
+            '<p>Cantidad: <strong>' . (int) $linea['cantidad'] . '</strong></p>' .
+            '<p>Coste: <strong>' . (int) $linea['bistrocoins_total'] . ' BistroCoins</strong></p>' .
+            '<form method="post" action="' . h(base_url('carrito.php')) . '">' .
+            csrf_field() .
+            '<input type="hidden" name="accion" value="remove_reward">' .
+            '<input type="hidden" name="recompensa_id" value="' . (int) $linea['recompensa_id'] . '">' .
+            '<button class="btn btn-danger" type="submit">Quitar recompensa</button>' .
+            '</form>' .
+            '</article>';
+    }
+    $recompensasHtml .= '</div>';
+}
+
 $tipoLabel = $cart['tipo'] === 'llevar' ? 'Llevar' : 'Local';
 
 // Ofertas
@@ -175,12 +215,14 @@ $ofertas = OfertaRepository::getActiveOffers();
 $ofertasHtml = '';
 $ofertaAplicada = $cart['oferta_aplicada'] ?? null;
 if ($ofertaAplicada) {
-    $oferta = OfertaRepository::findById($ofertaAplicada);
-    $ofertasHtml .= '<p>Oferta aplicada: ' . h($oferta['nombre']) . ' (' . h($oferta['descuento']) . '% descuento)</p>';
+    $oferta = OfertaRepository::findById((int) $ofertaAplicada);
+    if ($oferta) {
+        $ofertasHtml .= '<p>Oferta aplicada: ' . h((string) $oferta['nombre']) . ' (' . h((string) $oferta['descuento']) . '% descuento)</p>';
+    }
     $ofertasHtml .= '<form method="post" action="' . h(base_url('carrito.php')) . '" class="inline">';
     $ofertasHtml .= csrf_field();
     $ofertasHtml .= '<input type="hidden" name="accion" value="remove_offer">';
-    $ofertasHtml .= '<button class="btn" type="submit">Remover oferta</button>';
+    $ofertasHtml .= '<button class="btn" type="submit">Quitar oferta</button>';
     $ofertasHtml .= '</form>';
 } else {
     $ofertasHtml .= '<h3>Ofertas disponibles</h3>';
@@ -201,20 +243,20 @@ if ($ofertaAplicada) {
             $status = $applicable ? 'Aplicable' : 'No aplicable';
             $productosReq = '';
             foreach ($o['productos'] as $prod) {
-                $productosReq .= $prod['producto_nombre'] . ' x' . $prod['cantidad'] . ', ';
+                $productosReq .= (string) $prod['producto_nombre'] . ' x' . (int) $prod['cantidad'] . ', ';
             }
             $productosReq = rtrim($productosReq, ', ');
             $ofertasHtml .= '<div class="oferta-item">';
-            $ofertasHtml .= '<h4>' . h($o['nombre']) . '</h4>';
-            $ofertasHtml .= '<p>' . h($o['descripcion']) . '</p>';
+            $ofertasHtml .= '<h4>' . h((string) $o['nombre']) . '</h4>';
+            $ofertasHtml .= '<p>' . h((string) $o['descripcion']) . '</p>';
             $ofertasHtml .= '<p>Requiere: ' . h($productosReq) . '</p>';
-            $ofertasHtml .= '<p>Descuento: ' . h($o['descuento']) . '%</p>';
+            $ofertasHtml .= '<p>Descuento: ' . h((string) $o['descuento']) . '%</p>';
             $ofertasHtml .= '<p>Estado: ' . $status . '</p>';
             if ($applicable) {
                 $ofertasHtml .= '<form method="post" action="' . h(base_url('carrito.php')) . '" class="inline">';
                 $ofertasHtml .= csrf_field();
                 $ofertasHtml .= '<input type="hidden" name="accion" value="apply_offer">';
-                $ofertasHtml .= '<input type="hidden" name="oferta_id" value="' . $o['id'] . '">';
+                $ofertasHtml .= '<input type="hidden" name="oferta_id" value="' . (int) $o['id'] . '">';
                 $ofertasHtml .= '<button class="btn btn-primary" type="submit">Aplicar oferta</button>';
                 $ofertasHtml .= '</form>';
             }
@@ -222,10 +264,19 @@ if ($ofertaAplicada) {
         }
     }
 }
+
 $carritoHtml = '';
 if ($lineasHtml === '') {
-    $carritoHtml = '<div class="alert">Tu carrito está vacío.</div>' .
-        '<p><a class="btn btn-primary" href="' . h(base_url('pedido_nuevo.php')) . '">Ver carta</a></p>';
+    if ($resumenCarrito['lineas_recompensa'] === []) {
+        $carritoHtml = '<div class="alert">Tu carrito esta vacio.</div>' .
+            '<p class="actions-inline">' .
+            '<a class="btn btn-primary" href="' . h(base_url('pedido_nuevo.php')) . '">Ver carta</a>' .
+            '<a class="btn" href="' . h(base_url('recompensas_cliente.php')) . '">Ver recompensas</a>' .
+            '</p>';
+    } else {
+        $carritoHtml = '<div class="alert">No hay productos de pago en el carrito. Puedes confirmar un pedido solo con recompensas.</div>' .
+            '<p><a class="btn" href="' . h(base_url('recompensas_cliente.php')) . '">Seguir canjeando recompensas</a></p>';
+    }
 } else {
     $carritoHtml = '<form method="post" action="' . h(base_url('carrito.php')) . '">' .
         csrf_field() .
@@ -236,9 +287,11 @@ if ($lineasHtml === '') {
         '</table>' .
         '<p><strong>Subtotal: ' . h(money_eur(array_sum(array_column($resumenCarrito['lineas'], 'subtotal')))) . '</strong></p>' .
         '<p><strong>Descuento aplicado: -' . h(money_eur($resumenCarrito['descuento_aplicado'])) . '</strong></p>' .
-        '<p><strong>Total: ' . h(money_eur((float) $resumenCarrito['total'])) . '</strong></p>' .
+        '<p><strong>BistroCoins usados en recompensas: ' . (int) $resumenCarrito['bistrocoins_usados'] . '</strong></p>' .
+        '<p><strong>Total a pagar en euros: ' . h(money_eur((float) $resumenCarrito['total'])) . '</strong></p>' .
         '<div class="actions-inline">' .
         '<button class="btn btn-primary" type="submit">Actualizar carrito</button>' .
+        '<a class="btn" href="' . h(base_url('recompensas_cliente.php')) . '">Ver recompensas</a>' .
         '<a class="btn" href="' . h(base_url('pedido_nuevo.php')) . '">Seguir comprando</a>' .
         '</div>' .
         '</form>' .
@@ -248,6 +301,17 @@ if ($lineasHtml === '') {
         '<input type="hidden" name="accion" value="clear_cart">' .
         '<button class="btn btn-danger" type="submit">Vaciar carrito</button>' .
         '</form>' .
+        '<form method="post" action="' . h(base_url('carrito.php')) . '" class="inline">' .
+        csrf_field() .
+        '<input type="hidden" name="accion" value="checkout">' .
+        '<button class="btn btn-primary" type="submit">Ir al pago</button>' .
+        '</form>' .
+        '</div>';
+}
+
+if ($lineasHtml === '' && $resumenCarrito['lineas_recompensa'] !== []) {
+    $carritoHtml .= '<p><strong>BistroCoins usados en recompensas: ' . (int) $resumenCarrito['bistrocoins_usados'] . '</strong></p>';
+    $carritoHtml .= '<div class="carrito-actions">' .
         '<form method="post" action="' . h(base_url('carrito.php')) . '" class="inline">' .
         csrf_field() .
         '<input type="hidden" name="accion" value="checkout">' .
@@ -273,7 +337,6 @@ $contenido = <<<HTML
     </div>
     <button class="btn" type="submit">Guardar tipo</button>
   </form>
-  <p>Tipo actual: <strong>{tipo_label}</strong></p>
 </section>
 
 <section>
@@ -282,19 +345,28 @@ $contenido = <<<HTML
 </section>
 
 <section class="carrito-panel">
+  {$recompensasHtml}
   {$carritoHtml}
 </section>
+<script>
+(function () {
+  const cards = document.querySelectorAll('#cart-rewards-grid .reward-in-cart');
+  if (!cards.length) return;
+  cards.forEach((card, idx) => {
+    setTimeout(() => card.classList.add('reward-in-cart-visible'), (idx + 1) * 80);
+  });
+})();
+</script>
 HTML;
 
 $contenido = str_replace(
-    ['{usuario}', '{action}', '{csrf}', '{sel_local}', '{sel_llevar}', '{tipo_label}'],
+    ['{usuario}', '{action}', '{csrf}', '{sel_local}', '{sel_llevar}'],
     [
         h((string) $usuario['nombre_usuario']),
         h(base_url('carrito.php')),
         csrf_field(),
         $cart['tipo'] === 'local' ? 'selected' : '',
         $cart['tipo'] === 'llevar' ? 'selected' : '',
-        h($tipoLabel),
     ],
     $contenido
 );

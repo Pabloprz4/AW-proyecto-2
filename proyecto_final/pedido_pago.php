@@ -6,26 +6,31 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $usuario = require_login();
 $cart = pedido_cart_get();
 
-if (empty($cart['items'])) {
-    flash_set('error', 'Tu carrito está vacío. Debes crear un pedido primero.');
+if (($cart['items'] ?? []) === [] && ($cart['recompensas'] ?? []) === []) {
+    flash_set('error', 'Tu carrito esta vacio. Debes crear un pedido primero.');
     redirect_to('carrito.php');
 }
 
 $resumenCarrito = pedido_cart_resolve($cart);
-if ($resumenCarrito['ids_invalidos'] !== []) {
+if ($resumenCarrito['ids_invalidos'] !== [] || $resumenCarrito['ids_recompensas_invalidas'] !== []) {
     foreach ($resumenCarrito['ids_invalidos'] as $idInvalido) {
         unset($cart['items'][$idInvalido]);
     }
+    foreach ($resumenCarrito['ids_recompensas_invalidas'] as $idInvalido) {
+        unset($cart['recompensas'][$idInvalido]);
+    }
     pedido_cart_save($cart);
-    flash_set('error', 'Se han retirado del carrito productos que ya no están ofertados o disponibles.');
+    flash_set('error', 'Se han retirado elementos invalidos del carrito. Revisa productos y recompensas.');
     redirect_to('carrito.php');
 }
 
-$lineasValidas = $resumenCarrito['lineas'];
+$lineasPago = $resumenCarrito['lineas'];
+$lineasRecompensa = $resumenCarrito['lineas_recompensa'];
 $total = (float) $resumenCarrito['total'];
+$bistrocoinsUsados = (int) $resumenCarrito['bistrocoins_usados'];
 
-if ($lineasValidas === []) {
-    flash_set('error', 'No hay productos válidos para pagar.');
+if ($lineasPago === [] && $lineasRecompensa === []) {
+    flash_set('error', 'No hay elementos validos para pagar.');
     redirect_to('carrito.php');
 }
 
@@ -40,29 +45,29 @@ $tarjeta = [
 
 if (is_post()) {
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF inválido.';
+        $errores[] = 'Token CSRF invalido.';
     }
 
     if ($metodoPago === '') {
-        $errores[] = 'Método de pago inválido.';
+        $errores[] = 'Metodo de pago invalido.';
     }
 
     if ($metodoPago === 'tarjeta') {
         $numero = preg_replace('/\s+/', '', $tarjeta['numero']);
         if (!is_string($numero) || !preg_match('/^\d{13,19}$/', $numero)) {
-            $errores[] = 'Número de tarjeta inválido.';
+            $errores[] = 'Numero de tarjeta invalido.';
         }
 
         if (strlen($tarjeta['titular']) < 3) {
-            $errores[] = 'Titular de tarjeta inválido.';
+            $errores[] = 'Titular de tarjeta invalido.';
         }
 
         if (!preg_match('/^(0[1-9]|1[0-2])\/\d{2}$/', $tarjeta['caducidad'])) {
-            $errores[] = 'Caducidad inválida (MM/AA).';
+            $errores[] = 'Caducidad invalida (MM/AA).';
         }
 
         if (!preg_match('/^\d{3,4}$/', $tarjeta['cvv'])) {
-            $errores[] = 'CVV inválido.';
+            $errores[] = 'CVV invalido.';
         }
     }
 
@@ -93,12 +98,20 @@ if ($errores) {
 }
 
 $filasResumen = '';
-foreach ($lineasValidas as $linea) {
+foreach ($lineasPago as $linea) {
     $filasResumen .= '<tr>' .
-        '<td>' . h($linea['nombre']) . '</td>' .
+        '<td>' . h((string) $linea['nombre']) . '</td>' .
         '<td>' . (int) $linea['cantidad'] . '</td>' .
         '<td>' . h(money_eur((float) $linea['precio_final'])) . '</td>' .
         '<td>' . h(money_eur((float) $linea['subtotal'])) . '</td>' .
+        '</tr>';
+}
+foreach ($lineasRecompensa as $linea) {
+    $filasResumen .= '<tr>' .
+        '<td>' . h((string) $linea['nombre']) . ' (Recompensa)</td>' .
+        '<td>' . (int) $linea['cantidad'] . '</td>' .
+        '<td>0.00 EUR</td>' .
+        '<td>0.00 EUR</td>' .
         '</tr>';
 }
 
@@ -122,11 +135,12 @@ $contenido = <<<HTML
       {$filasResumen}
     </tbody>
   </table>
-  <p><strong>Total: {total}</strong></p>
+  <p><strong>BistroCoins usados: {coins_usados}</strong></p>
+  <p><strong>Total a pagar: {total}</strong></p>
 </section>
 
 <section>
-  <h2>Método de pago</h2>
+  <h2>Metodo de pago</h2>
   <form method="post" action="{action}">
     {csrf}
     <p>
@@ -142,7 +156,7 @@ $contenido = <<<HTML
     <fieldset>
       <legend>Datos de tarjeta (solo si eliges tarjeta)</legend>
       <p>
-        <label for="tarjeta_numero">Número:</label><br>
+        <label for="tarjeta_numero">Numero:</label><br>
         <input type="text" id="tarjeta_numero" name="tarjeta_numero" value="{tarjeta_numero}">
       </p>
       <p>
@@ -168,6 +182,7 @@ HTML;
 
 $contenido = str_replace(
     [
+        '{coins_usados}',
         '{total}',
         '{action}',
         '{csrf}',
@@ -180,6 +195,7 @@ $contenido = str_replace(
         '{volver}',
     ],
     [
+        (string) $bistrocoinsUsados,
         h(money_eur($total)),
         h(base_url('pedido_pago.php')),
         csrf_field(),
