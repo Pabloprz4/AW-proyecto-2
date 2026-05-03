@@ -41,7 +41,7 @@ $flujos = [
 foreach ($pedidos as $pedido) {
     $pedidoId = (int) $pedido['id'];
     $estado = (string) $pedido['estado'];
-    $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+    $numeroVisible = pedido_numero_visible($pedido);
     $estadoLabel = PedidoRepository::estadoLabel($estado);
     $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
     $total = money_eur((float) $pedido['total']);

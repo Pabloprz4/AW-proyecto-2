@@ -68,7 +68,7 @@ if ($filas === '') {
     $filas = '<tr><td colspan="6">No hay lineas en este pedido.</td></tr>';
 }
 
-$numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+$numeroVisible = pedido_numero_visible($pedido);
 $estadoLabel = PedidoRepository::estadoLabel((string) $pedido['estado']);
 $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
 $metodoPagoLabel = PedidoRepository::metodoPagoLabel((string) $pedido['metodo_pago']);
@@ -130,7 +130,7 @@ $contenido = <<<HTML
   <h2>Detalle de pedido</h2>
   <ul>
     <li><strong>ID:</strong> {id}</li>
-    <li><strong>Numero del dia:</strong> {numero_visible}</li>
+    <li><strong>Número del día:</strong> {numero_visible}</li>
     <li><strong>Fecha/hora:</strong> {fecha_pedido}</li>
     <li><strong>Cliente:</strong> {cliente}</li>
     <li><strong>Estado:</strong> {estado}</li>

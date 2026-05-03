@@ -237,7 +237,7 @@ $bloqueBistrocoins = str_replace('{recompensas}', h(base_url('recompensas_client
 $pedidosActivosPerfil = PedidoRepository::forCliente((int) $usuario['id'], ['en_preparacion', 'cocinando', 'listo_cocina', 'terminado']);
 $filasPedidosPerfil = '';
 foreach ($pedidosActivosPerfil as $pedido) {
-    $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+    $numeroVisible = pedido_numero_visible($pedido);
     $filasPedidosPerfil .= '<tr>' .
         '<td>' . (int) $pedido['id'] . '</td>' .
         '<td>' . h($numeroVisible) . '</td>' .

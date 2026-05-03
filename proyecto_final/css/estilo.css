@@ -515,12 +515,14 @@ a.deshabilitado {
 
 .camarero-board {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-	gap: 1rem;
-	align-items: start;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 0.85rem;
+	align-items: stretch;
 }
 
 .camarero-flow {
+	display: flex;
+	flex-direction: column;
 	min-width: 0;
 }
 
@@ -555,9 +557,11 @@ a.deshabilitado {
 }
 
 .camarero-flow-list {
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-columns: 1fr;
+	align-content: start;
 	gap: 0.8rem;
+	flex: 1;
 }
 
 .camarero-card {
@@ -565,6 +569,7 @@ a.deshabilitado {
 	flex-direction: column;
 	gap: 0.8rem;
 	border-left: 5px solid #64748b;
+	min-width: 0;
 }
 
 .camarero-card-estado-recibido {
@@ -864,6 +869,12 @@ a.boton:hover {
 	background: #f3f4f6;
 }
 
+.ofertas-table th,
+.ofertas-table td {
+	text-align: center;
+	vertical-align: middle;
+}
+
 .alert {
 	border: 1px solid #cbd5e1;
 	background: #f8fafc;
@@ -875,6 +886,48 @@ a.boton:hover {
 .alert-error {
 	background: #fef2f2;
 	border-color: #fecaca;
+}
+
+.product-form-errors {
+	border-left: 0.35rem solid #dc2626;
+	color: #7f1d1d;
+}
+
+.product-form-errors strong {
+	display: block;
+	margin-bottom: 0.35rem;
+}
+
+.product-form-errors ul {
+	margin: 0;
+	padding-left: 1.2rem;
+}
+
+.payment-error-summary {
+	border-left: 0.35rem solid #dc2626;
+	color: #7f1d1d;
+}
+
+.payment-error-summary strong {
+	display: block;
+	margin-bottom: 0.25rem;
+}
+
+.payment-error-summary p {
+	margin: 0.25rem 0;
+}
+
+.payment-error-list {
+	display: grid;
+	gap: 0.35rem;
+	margin-top: 0.6rem;
+}
+
+.payment-error-item {
+	background: #fff;
+	border: 1px solid #fecaca;
+	border-radius: 0.3rem;
+	padding: 0.45rem 0.55rem;
 }
 
 .alert-ok {
@@ -982,6 +1035,12 @@ textarea {
 	}
 }
 
+@media (min-width: 641px) and (max-width: 1150px) {
+	.camarero-board {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
 /* Movil vertical (cliente): layout en una sola columna */
 @media (max-width: 899px) {
 	div#contenedor {
@@ -1042,6 +1101,10 @@ textarea {
 	.grid {
 		grid-template-columns: 1fr;
 		gap: 0.75rem;
+	}
+
+	.camarero-board {
+		grid-template-columns: 1fr;
 	}
 
 	.card {

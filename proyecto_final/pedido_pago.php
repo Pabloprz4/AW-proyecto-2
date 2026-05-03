@@ -45,29 +45,29 @@ $tarjeta = [
 
 if (is_post()) {
     if (!verify_csrf()) {
-        $errores[] = 'Token CSRF invalido.';
+        $errores[] = 'Token CSRF inválido.';
     }
 
     if ($metodoPago === '') {
-        $errores[] = 'Metodo de pago invalido.';
+        $errores[] = 'Método de pago inválido.';
     }
 
     if ($metodoPago === 'tarjeta') {
         $numero = preg_replace('/\s+/', '', $tarjeta['numero']);
         if (!is_string($numero) || !preg_match('/^\d{13,19}$/', $numero)) {
-            $errores[] = 'Numero de tarjeta invalido.';
+            $errores[] = 'Número de tarjeta inválido.';
         }
 
         if (strlen($tarjeta['titular']) < 3) {
-            $errores[] = 'Titular de tarjeta invalido.';
+            $errores[] = 'Titular de tarjeta inválido.';
         }
 
         if (!preg_match('/^(0[1-9]|1[0-2])\/\d{2}$/', $tarjeta['caducidad'])) {
-            $errores[] = 'Caducidad invalida (MM/AA).';
+            $errores[] = 'Caducidad inválida (MM/AA).';
         }
 
         if (!preg_match('/^\d{3,4}$/', $tarjeta['cvv'])) {
-            $errores[] = 'CVV invalido.';
+            $errores[] = 'CVV inválido.';
         }
     }
 
@@ -92,9 +92,13 @@ $listaErrores = '';
 if ($errores) {
     $items = '';
     foreach ($errores as $error) {
-        $items .= '<li>' . h($error) . '</li>';
+        $items .= '<p class="payment-error-item">' . h($error) . '</p>';
     }
-    $listaErrores = '<ul>' . $items . '</ul>';
+    $listaErrores = '<div class="alert alert-error payment-error-summary" role="alert">' .
+        '<strong>No se pudo confirmar el pago.</strong>' .
+        '<p>Revisa los datos marcados antes de continuar.</p>' .
+        '<div class="payment-error-list">' . $items . '</div>' .
+        '</div>';
 }
 
 $filasResumen = '';

@@ -141,18 +141,32 @@ if (is_post()) {
                 continue;
             }
 
-            if (!is_dir(__DIR__ . '/img')) {
-                mkdir(__DIR__ . '/img', 0777, true);
-            }
+            $uploadDir = defined('UPLOAD_PRODUCTOS_DIR')
+                ? (string) UPLOAD_PRODUCTOS_DIR
+                : __DIR__ . '/uploads/productos';
 
-            $fileName = 'p_' . time() . '_' . random_int(100, 999) . '_' . $i . '.' . $ext;
-            $destinoFisico = __DIR__ . '/img/' . $fileName;
-            if (!move_uploaded_file($tmp, $destinoFisico)) {
-                $errores[] = 'No se pudo guardar una de las imágenes.';
+            if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true)) {
+                $errores[] = 'No se pudo crear la carpeta de imágenes de productos.';
                 continue;
             }
 
-            $nuevasRutas[] = 'img/' . $fileName;
+            if (!is_writable($uploadDir)) {
+                @chmod($uploadDir, 0775);
+            }
+
+            if (!is_writable($uploadDir)) {
+                $errores[] = 'La carpeta de imágenes de productos no tiene permisos de escritura.';
+                continue;
+            }
+
+            $fileName = 'p_' . time() . '_' . random_int(100, 999) . '_' . $i . '.' . $ext;
+            $destinoFisico = $uploadDir . '/' . $fileName;
+            if (!move_uploaded_file($tmp, $destinoFisico)) {
+                $errores[] = 'No se pudo guardar una de las imágenes. Revisa los permisos de la carpeta de subida.';
+                continue;
+            }
+
+            $nuevasRutas[] = 'uploads/productos/' . $fileName;
         }
     }
 
@@ -228,7 +242,10 @@ if ($errores) {
     foreach ($errores as $error) {
         $items .= '<li>' . h($error) . '</li>';
     }
-    $listaErrores = '<ul>' . $items . '</ul>';
+    $listaErrores = '<div class="alert alert-error product-form-errors" role="alert">' .
+        '<strong>No se pudo guardar el producto.</strong>' .
+        '<ul>' . $items . '</ul>' .
+        '</div>';
 }
 
 $opcionesCategoria = '';

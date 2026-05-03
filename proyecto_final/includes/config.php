@@ -3,11 +3,11 @@
 /**
  * Parámetros de conexión a la BD
  */
-define('BD_HOST', getenv('BD_HOST') ?: 'localhost');
+define('BD_HOST', getenv('BD_HOST') ?: 'vm009.db.swarm.test');
 define('BD_PORT', getenv('BD_PORT') ?: '3306');
-define('BD_NAME', getenv('BD_NAME') ?: 'awp3_prod');
-define('BD_USER', getenv('BD_USER') ?: 'root');
-define('BD_PASS', getenv('BD_PASS') ?: '');
+define('BD_NAME', getenv('BD_NAME') ?: 'aw_prod');
+define('BD_USER', getenv('BD_USER') ?: 'awp3_app');
+define('BD_PASS', getenv('BD_PASS') ?: 'Awp3App!123');
 
 /**
  * Parámetros de configuración utilizados para generar las URLs y las rutas a ficheros en la aplicación
@@ -24,6 +24,10 @@ if (!defined('APP_ROOT')) {
 
 if (!defined('UPLOAD_AVATARS_DIR')) {
     define('UPLOAD_AVATARS_DIR', APP_ROOT . '/uploads/avatars');
+}
+
+if (!defined('UPLOAD_PRODUCTOS_DIR')) {
+    define('UPLOAD_PRODUCTOS_DIR', APP_ROOT . '/uploads/productos');
 }
 
 if (!defined('PREDEFINED_AVATARS')) {

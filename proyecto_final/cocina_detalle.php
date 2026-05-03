@@ -77,7 +77,7 @@ if ($lineasHtml === '') {
     $lineasHtml = '<div class="alert cocina-empty">No hay líneas en este pedido.</div>';
 }
 
-$numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+$numeroVisible = pedido_numero_visible($pedido);
 $estadoLabel = PedidoRepository::estadoLabel($estado);
 $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
 $progresoPorcentaje = $totalLineas > 0

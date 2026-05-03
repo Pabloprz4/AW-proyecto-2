@@ -181,6 +181,30 @@ function money_eur(float $amount): string
     return number_format($amount, 2, '.', '') . ' EUR';
 }
 
+function date_es(string $date): string
+{
+    $value = trim($date);
+    if ($value === '') {
+        return '';
+    }
+
+    $datePart = substr($value, 0, 10);
+    $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $datePart);
+    if (!$parsed || $parsed->format('Y-m-d') !== $datePart) {
+        return $value;
+    }
+
+    return $parsed->format('d/m/Y');
+}
+
+function pedido_numero_visible(array $pedido): string
+{
+    $numero = (int) ($pedido['numero_dia'] ?? 0);
+    $fecha = date_es((string) ($pedido['fecha_dia'] ?? ''));
+
+    return $fecha !== '' ? $numero . ' - ' . $fecha : (string) $numero;
+}
+
 function predefined_avatars(): array
 {
     if (!defined('PREDEFINED_AVATARS') || !is_array(PREDEFINED_AVATARS)) {

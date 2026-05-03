@@ -10,7 +10,7 @@ $tarjetas = '';
 foreach ($pedidos as $pedido) {
     $pedidoId = (int) $pedido['id'];
     $estado = (string) $pedido['estado'];
-    $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+    $numeroVisible = pedido_numero_visible($pedido);
     $asignado = (int) ($pedido['cocinero_id'] ?? 0);
     $estadoLabel = PedidoRepository::estadoLabel($estado);
     $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);

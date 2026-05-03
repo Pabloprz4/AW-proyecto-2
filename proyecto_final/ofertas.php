@@ -12,7 +12,7 @@ $contenidoPrincipal .= '<p><a href="' . h(base_url('oferta_form.php')) . '">Crea
 if (empty($ofertas)) {
     $contenidoPrincipal .= '<p>No hay ofertas.</p>';
 } else {
-    $contenidoPrincipal .= '<table>';
+    $contenidoPrincipal .= '<table class="table ofertas-table">';
     $contenidoPrincipal .= '<thead><tr><th>Nombre</th><th>Descripción</th><th>Descuento</th><th>Fechas</th><th>Acciones</th></tr></thead>';
     $contenidoPrincipal .= '<tbody>';
     foreach ($ofertas as $oferta) {

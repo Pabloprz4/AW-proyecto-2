@@ -27,7 +27,7 @@ $renderFilas = static function (array $lista): string {
     foreach ($lista as $pedido) {
         $estado = PedidoRepository::estadoLabel((string) $pedido['estado']);
         $tipo = PedidoRepository::tipoLabel((string) $pedido['tipo']);
-        $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+        $numeroVisible = pedido_numero_visible($pedido);
 
         $acciones = '<a href="' . h(base_url('pedido_detalle.php?id=' . (int) $pedido['id'])) . '">Detalle</a>';
         if (in_array((string) $pedido['estado'], ['nuevo', 'recibido'], true)) {

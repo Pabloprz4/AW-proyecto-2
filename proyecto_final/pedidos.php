@@ -29,7 +29,7 @@ foreach ($estadosPendientes as $estado) {
 
 $filas = '';
 foreach ($pedidos as $pedido) {
-    $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
+    $numeroVisible = pedido_numero_visible($pedido);
     $camarero = (string) ($pedido['camarero_usuario'] ?? '');
     if ($camarero === '') {
         $camarero = '-';

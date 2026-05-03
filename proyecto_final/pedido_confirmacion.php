@@ -25,7 +25,7 @@ if (!$esPropietario && !$esGerente) {
     redirect_to('index.php');
 }
 
-$numeroVisible = (int) $pedido['numero_dia'] . '/' . h((string) $pedido['fecha_dia']);
+$numeroVisible = pedido_numero_visible($pedido);
 $estadoLabel = PedidoRepository::estadoLabel((string) $pedido['estado']);
 $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
 $metodoPagoLabel = PedidoRepository::metodoPagoLabel((string) $pedido['metodo_pago']);
@@ -40,7 +40,7 @@ $contenido = <<<HTML
   <p>Tu pedido se ha registrado correctamente.</p>
   <ul>
     <li><strong>ID interno:</strong> {id}</li>
-    <li><strong>Numero de pedido (dia actual):</strong> {numero_visible}</li>
+    <li><strong>Número de pedido (día actual):</strong> {numero_visible}</li>
     <li><strong>Estado:</strong> {estado}</li>
     <li><strong>Tipo:</strong> {tipo}</li>
     <li><strong>Metodo de pago:</strong> {metodo_pago}</li>
@@ -62,7 +62,7 @@ $contenido = str_replace(
     ['{id}', '{numero_visible}', '{estado}', '{tipo}', '{metodo_pago}', '{total_sin_descuento}', '{descuento_aplicado}', '{coins_usados}', '{coins_ganados}', '{total}', '{detalle}', '{nuevo}', '{inicio}'],
     [
         (string) (int) $pedido['id'],
-        $numeroVisible,
+        h($numeroVisible),
         h($estadoLabel),
         h($tipoLabel),
         h($metodoPagoLabel),
