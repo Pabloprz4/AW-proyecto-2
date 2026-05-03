@@ -30,4 +30,5 @@ require_once __DIR__ . '/repos/CategoriaRepository.php';
 require_once __DIR__ . '/repos/ProductoRepository.php';
 require_once __DIR__ . '/repos/PedidoRepository.php';
 require_once __DIR__ . '/repos/OfertaRepository.php';
+require_once __DIR__ . '/repos/RecompensaRepository.php';
 require_once __DIR__ . '/auth.php';

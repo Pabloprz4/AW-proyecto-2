@@ -7,7 +7,7 @@ final class UsuarioRepository
 
     public static function all(bool $includeInactive = true): array
     {
-        $sql = 'SELECT id, nombre_usuario, email, nombre, apellidos, rol, avatar, activo, creado_en, actualizado_en FROM usuarios';
+        $sql = 'SELECT id, nombre_usuario, email, nombre, apellidos, rol, avatar, bistrocoins, activo, creado_en, actualizado_en FROM usuarios';
         if (!$includeInactive) {
             $sql .= ' WHERE activo = 1';
         }
@@ -78,8 +78,8 @@ final class UsuarioRepository
         $passwordHash = password_hash((string) $data['password'], PASSWORD_DEFAULT);
 
         $stmt = db()->prepare(
-            'INSERT INTO usuarios (nombre_usuario, email, nombre, apellidos, password_hash, rol, avatar, activo)
-             VALUES (:nombre_usuario, :email, :nombre, :apellidos, :password_hash, :rol, :avatar, :activo)'
+            'INSERT INTO usuarios (nombre_usuario, email, nombre, apellidos, password_hash, rol, avatar, bistrocoins, activo)
+             VALUES (:nombre_usuario, :email, :nombre, :apellidos, :password_hash, :rol, :avatar, :bistrocoins, :activo)'
         );
 
         $stmt->execute([
@@ -90,6 +90,7 @@ final class UsuarioRepository
             'password_hash' => $passwordHash,
             'rol' => $rol,
             'avatar' => $data['avatar'] ?? null,
+            'bistrocoins' => (int) ($data['bistrocoins'] ?? 0),
             'activo' => (int) ($data['activo'] ?? 1),
         ]);
 
@@ -140,6 +141,13 @@ final class UsuarioRepository
     {
         $stmt = db()->prepare('UPDATE usuarios SET activo = :activo WHERE id = :id');
         return $stmt->execute(['id' => $id, 'activo' => $activo ? 1 : 0]);
+    }
+
+    public static function setBistrocoins(int $id, int $bistrocoins): bool
+    {
+        $coins = max(0, $bistrocoins);
+        $stmt = db()->prepare('UPDATE usuarios SET bistrocoins = :bistrocoins WHERE id = :id');
+        return $stmt->execute(['id' => $id, 'bistrocoins' => $coins]);
     }
 
     private static function normalizeRole(string $role): string

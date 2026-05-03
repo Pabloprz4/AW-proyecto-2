@@ -1,0 +1,19 @@
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS recompensas;
+
+CREATE TABLE recompensas (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT UNSIGNED NOT NULL,
+  bistrocoins INT UNSIGNED NOT NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_recompensas_producto (producto_id),
+  KEY idx_recompensas_activo (activo),
+  CONSTRAINT fk_recompensas_producto
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;
