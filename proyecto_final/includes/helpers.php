@@ -250,6 +250,7 @@ function pedido_cart_get(): array
             'tipo' => 'local',
             'items' => [],
             'oferta_aplicada' => null,
+            'recompensas' => [],
         ];
     }
 
@@ -266,10 +267,22 @@ function pedido_cart_get(): array
         }
     }
 
+    $recompensas = [];
+    if (isset($cart['recompensas']) && is_array($cart['recompensas'])) {
+        foreach ($cart['recompensas'] as $recompensaId => $cantidad) {
+            $id = (int) $recompensaId;
+            $qty = (int) $cantidad;
+            if ($id > 0 && $qty > 0) {
+                $recompensas[(string) $id] = min($qty, 20);
+            }
+        }
+    }
+
     return [
         'tipo' => $tipo,
         'items' => $items,
         'oferta_aplicada' => $cart['oferta_aplicada'] ?? null,
+        'recompensas' => $recompensas,
     ];
 }
 
@@ -288,10 +301,22 @@ function pedido_cart_save(array $cart): void
         }
     }
 
+    $recompensas = [];
+    if (isset($cart['recompensas']) && is_array($cart['recompensas'])) {
+        foreach ($cart['recompensas'] as $recompensaId => $cantidad) {
+            $id = (int) $recompensaId;
+            $qty = (int) $cantidad;
+            if ($id > 0 && $qty > 0) {
+                $recompensas[(string) $id] = min($qty, 20);
+            }
+        }
+    }
+
     $_SESSION['pedido_cart'] = [
         'tipo' => $tipo,
         'items' => $items,
         'oferta_aplicada' => $cart['oferta_aplicada'] ?? null,
+        'recompensas' => $recompensas,
     ];
 }
 
@@ -303,10 +328,13 @@ function pedido_cart_clear(): void
 function pedido_cart_resolve(array $cart): array
 {
     $lineas = [];
+    $lineasRecompensa = [];
     $total = 0.0;
     $cantidadTotal = 0;
     $idsInvalidos = [];
+    $idsRecompensasInvalidas = [];
     $descuentoAplicado = 0.0;
+    $bistrocoinsUsados = 0;
 
     $items = isset($cart['items']) && is_array($cart['items']) ? $cart['items'] : [];
 
@@ -370,12 +398,49 @@ function pedido_cart_resolve(array $cart): array
         }
     }
 
+    $recompensas = isset($cart['recompensas']) && is_array($cart['recompensas']) ? $cart['recompensas'] : [];
+    foreach ($recompensas as $recompensaId => $cantidad) {
+        $id = (int) $recompensaId;
+        $qty = (int) $cantidad;
+        if ($id <= 0 || $qty <= 0) {
+            continue;
+        }
+
+        $recompensa = RecompensaRepository::findById($id);
+        if (
+            !$recompensa
+            || (int) $recompensa['activo'] !== 1
+            || (int) ($recompensa['ofertado'] ?? 0) !== 1
+            || (int) ($recompensa['disponible'] ?? 0) !== 1
+        ) {
+            $idsRecompensasInvalidas[] = (string) $id;
+            continue;
+        }
+
+        $costeUnitario = (int) $recompensa['bistrocoins'];
+        $totalCoins = $costeUnitario * $qty;
+        $bistrocoinsUsados += $totalCoins;
+        $cantidadTotal += $qty;
+
+        $lineasRecompensa[] = [
+            'recompensa_id' => $id,
+            'producto_id' => (int) $recompensa['producto_id'],
+            'nombre' => (string) $recompensa['producto_nombre'],
+            'cantidad' => $qty,
+            'bistrocoins_unit' => $costeUnitario,
+            'bistrocoins_total' => $totalCoins,
+        ];
+    }
+
     return [
         'lineas' => $lineas,
+        'lineas_recompensa' => $lineasRecompensa,
         'total' => $total,
         'cantidad_total' => $cantidadTotal,
         'ids_invalidos' => $idsInvalidos,
+        'ids_recompensas_invalidas' => $idsRecompensasInvalidas,
         'descuento_aplicado' => $descuentoAplicado,
+        'bistrocoins_usados' => $bistrocoinsUsados,
     ];
 }
 

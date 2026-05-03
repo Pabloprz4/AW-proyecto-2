@@ -20,7 +20,7 @@ foreach ($pedidos as $pedido) {
 
 $renderFilas = static function (array $lista): string {
     if ($lista === []) {
-        return '<tr><td colspan="7">No hay pedidos.</td></tr>';
+        return '<tr><td colspan="8">No hay pedidos.</td></tr>';
     }
 
     $filas = '';
@@ -46,6 +46,7 @@ $renderFilas = static function (array $lista): string {
             '<td>' . h($tipo) . '</td>' .
             '<td>' . h($estado) . '</td>' .
             '<td>' . h(money_eur((float) $pedido['total'])) . '</td>' .
+            '<td>' . (int) ($pedido['bistrocoins_usados'] ?? 0) . ' usados / ' . (int) ($pedido['bistrocoins_ganados'] ?? 0) . ' ganados</td>' .
             '<td>' . $acciones . '</td>' .
             '</tr>';
     }
@@ -74,6 +75,7 @@ $contenido = <<<HTML
         <th>Tipo</th>
         <th>Estado</th>
         <th>Total</th>
+        <th>BistroCoins</th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -94,6 +96,7 @@ $contenido = <<<HTML
         <th>Tipo</th>
         <th>Estado</th>
         <th>Total</th>
+        <th>BistroCoins</th>
         <th>Acciones</th>
       </tr>
     </thead>

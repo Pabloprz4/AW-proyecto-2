@@ -28,6 +28,7 @@ function auth_user(): ?array
             'nombre_usuario' => (string) ($usuarioRepo['nombre_usuario'] ?? ('u' . $id)),
             'nombre' => (string) ($usuarioRepo['nombre'] ?? $nombre),
             'rol' => (string) ($usuarioRepo['rol'] ?? $rolPorDefecto),
+            'bistrocoins' => (int) ($usuarioRepo['bistrocoins'] ?? 0),
             'avatar' => isset($usuarioRepo['avatar']) && $usuarioRepo['avatar'] !== null
                 ? (string) $usuarioRepo['avatar']
                 : null,
@@ -39,6 +40,7 @@ function auth_user(): ?array
         'nombre_usuario' => 'u' . $id,
         'nombre' => $nombre,
         'rol' => $rolPorDefecto,
+        'bistrocoins' => 0,
         'avatar' => null,
     ];
 }

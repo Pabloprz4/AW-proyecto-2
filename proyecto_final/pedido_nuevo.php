@@ -124,7 +124,7 @@ foreach ($porCategoria as $categoriaNombre => $productosCategoria) {
 $tipoLabel = $cart['tipo'] === 'llevar' ? 'Llevar' : 'Local';
 $cantidadCarrito = (int) $resumenCarrito['cantidad_total'];
 $totalCarrito = (float) $resumenCarrito['total'];
-$carritoTexto = $cantidadCarrito === 1 ? '1 producto' : $cantidadCarrito . ' productos';
+$carritoTexto = $cantidadCarrito === 1 ? '1 elemento' : $cantidadCarrito . ' elementos';
 
 $contenido = <<<HTML
 <section>
@@ -154,6 +154,7 @@ $contenido = <<<HTML
   <div class="actions-inline">
     <span class="badge badge-accion-pendiente">{tipo_label}</span>
     <a class="btn btn-primary" href="{carrito_url}">Ver carrito</a>
+    <a class="btn" href="{recompensas_url}">Ver recompensas</a>
   </div>
 </section>
 
@@ -164,7 +165,7 @@ $contenido = <<<HTML
 HTML;
 
 $contenido = str_replace(
-    ['{usuario}', '{action}', '{csrf}', '{sel_local}', '{sel_llevar}', '{carrito_texto}', '{total_carrito}', '{tipo_label}', '{carrito_url}'],
+    ['{usuario}', '{action}', '{csrf}', '{sel_local}', '{sel_llevar}', '{carrito_texto}', '{total_carrito}', '{tipo_label}', '{carrito_url}', '{recompensas_url}'],
     [
         h((string) $usuario['nombre_usuario']),
         h(base_url('pedido_nuevo.php')),
@@ -175,6 +176,7 @@ $contenido = str_replace(
         h(money_eur($totalCarrito)),
         h($tipoLabel),
         h(base_url('carrito.php')),
+        h(base_url('recompensas_cliente.php')),
     ],
     $contenido
 );

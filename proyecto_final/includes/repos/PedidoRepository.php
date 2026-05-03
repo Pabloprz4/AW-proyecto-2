@@ -20,12 +20,13 @@ final class PedidoRepository
     public static function createFromCart(array $cart, int $clienteId, string $metodoPago): int
     {
         if ($clienteId <= 0) {
-            throw new InvalidArgumentException('Cliente inválido.');
+            throw new InvalidArgumentException('Cliente invalido.');
         }
 
         $items = isset($cart['items']) && is_array($cart['items']) ? $cart['items'] : [];
-        if (empty($items)) {
-            throw new InvalidArgumentException('El pedido no puede estar vacío.');
+        $recompensas = isset($cart['recompensas']) && is_array($cart['recompensas']) ? $cart['recompensas'] : [];
+        if ($items === [] && $recompensas === []) {
+            throw new InvalidArgumentException('El pedido no puede estar vacio.');
         }
 
         $tipo = self::normalizeTipo((string) ($cart['tipo'] ?? 'local'));
@@ -36,9 +37,12 @@ final class PedidoRepository
         $pdo->beginTransaction();
 
         try {
-            $lineas = [];
+            $lineasPago = [];
+            $lineasRecompensa = [];
             $totalSinDescuento = 0.0;
             $descuentoAplicado = 0.0;
+            $bistrocoinsUsados = 0;
+
             $stmtProducto = $pdo->prepare(
                 'SELECT id, nombre, precio, iva, ofertado, disponible FROM productos WHERE id = :id LIMIT 1'
             );
@@ -59,7 +63,7 @@ final class PedidoRepository
                     || (int) $producto['ofertado'] !== 1
                     || (int) ($producto['disponible'] ?? 0) !== 1
                 ) {
-                    throw new RuntimeException('Uno de los productos ya no está disponible.');
+                    throw new RuntimeException('Uno de los productos ya no esta disponible.');
                 }
 
                 $precioBase = (float) $producto['precio'];
@@ -68,7 +72,7 @@ final class PedidoRepository
                 $subtotal = round($precioFinalUnitario * $qty, 2);
                 $totalSinDescuento += $subtotal;
 
-                $lineas[] = [
+                $lineasPago[] = [
                     'producto_id' => (int) $producto['id'],
                     'producto_nombre' => (string) $producto['nombre'],
                     'precio_base' => round($precioBase, 2),
@@ -79,14 +83,54 @@ final class PedidoRepository
                 ];
             }
 
-            if (empty($lineas)) {
-                throw new RuntimeException('No hay líneas válidas para crear el pedido.');
+            $stmtRecompensa = $pdo->prepare(
+                'SELECT r.id, r.producto_id, r.bistrocoins, r.activo, p.nombre, p.ofertado, p.disponible
+                 FROM recompensas r
+                 INNER JOIN productos p ON p.id = r.producto_id
+                 WHERE r.id = :id
+                 LIMIT 1'
+            );
+
+            foreach ($recompensas as $recompensaId => $cantidad) {
+                $id = (int) $recompensaId;
+                $qty = (int) $cantidad;
+                if ($id <= 0 || $qty <= 0) {
+                    continue;
+                }
+
+                $stmtRecompensa->execute(['id' => $id]);
+                $recompensa = $stmtRecompensa->fetch();
+
+                if (
+                    !$recompensa
+                    || (int) $recompensa['activo'] !== 1
+                    || (int) $recompensa['ofertado'] !== 1
+                    || (int) $recompensa['disponible'] !== 1
+                ) {
+                    throw new RuntimeException('Una de las recompensas ya no esta disponible.');
+                }
+
+                $coinsUnit = (int) $recompensa['bistrocoins'];
+                $coinsTotal = $coinsUnit * $qty;
+                $bistrocoinsUsados += $coinsTotal;
+
+                $lineasRecompensa[] = [
+                    'producto_id' => (int) $recompensa['producto_id'],
+                    'producto_nombre' => (string) $recompensa['nombre'] . ' (Recompensa)',
+                    'cantidad' => $qty,
+                    'bistrocoins_unit' => $coinsUnit,
+                    'bistrocoins_total' => $coinsTotal,
+                ];
             }
 
-            // Aplicar oferta si existe
+            if ($lineasPago === [] && $lineasRecompensa === []) {
+                throw new RuntimeException('No hay lineas validas para crear el pedido.');
+            }
+
+            // Aplicar oferta sobre lineas de pago normales
             $ofertaAplicada = $cart['oferta_aplicada'] ?? null;
-            if ($ofertaAplicada) {
-                $oferta = OfertaRepository::findByIdWithProducts($ofertaAplicada);
+            if ($ofertaAplicada && $lineasPago !== []) {
+                $oferta = OfertaRepository::findByIdWithProducts((int) $ofertaAplicada);
                 if ($oferta) {
                     $precioPack = OfertaRepository::calculatePackPrice($oferta['productos']);
                     $descuento = (float) $oferta['descuento'];
@@ -95,7 +139,26 @@ final class PedidoRepository
             }
 
             $total = $totalSinDescuento - $descuentoAplicado;
-            if ($total < 0) $total = 0;
+            if ($total < 0) {
+                $total = 0;
+            }
+
+            $stmtUsuario = $pdo->prepare('SELECT bistrocoins FROM usuarios WHERE id = :id FOR UPDATE');
+            $stmtUsuario->execute(['id' => $clienteId]);
+            $usuario = $stmtUsuario->fetch();
+            if (!$usuario) {
+                throw new RuntimeException('Cliente no encontrado.');
+            }
+
+            $saldoActual = (int) $usuario['bistrocoins'];
+            $saldoReservado = self::pendingBistrocoinsByCliente($clienteId);
+            $saldoDisponible = max(0, $saldoActual - $saldoReservado);
+            if ($bistrocoinsUsados > $saldoDisponible) {
+                throw new RuntimeException('No tienes BistroCoins suficientes para canjear esas recompensas.');
+            }
+
+            $bistrocoinsGanados = (int) floor($total);
+            $liquidado = $metodoPago === 'tarjeta' ? 1 : 0;
 
             $fechaDia = date('Y-m-d');
             $stmtNumero = $pdo->prepare(
@@ -125,8 +188,15 @@ final class PedidoRepository
             }
 
             $stmtPedido = $pdo->prepare(
-                'INSERT INTO pedidos (numero_dia, fecha_dia, estado, tipo, metodo_pago, total, total_sin_descuento, descuento_aplicado, oferta_id, cliente_id)
-                 VALUES (:numero_dia, :fecha_dia, :estado, :tipo, :metodo_pago, :total, :total_sin_descuento, :descuento_aplicado, :oferta_id, :cliente_id)'
+                'INSERT INTO pedidos (
+                    numero_dia, fecha_dia, estado, tipo, metodo_pago, total,
+                    total_sin_descuento, descuento_aplicado, bistrocoins_usados,
+                    bistrocoins_ganados, bistrocoins_liquidados, oferta_id, cliente_id
+                 ) VALUES (
+                    :numero_dia, :fecha_dia, :estado, :tipo, :metodo_pago, :total,
+                    :total_sin_descuento, :descuento_aplicado, :bistrocoins_usados,
+                    :bistrocoins_ganados, :bistrocoins_liquidados, :oferta_id, :cliente_id
+                 )'
             );
 
             $stmtPedido->execute([
@@ -138,6 +208,9 @@ final class PedidoRepository
                 'total' => round($total, 2),
                 'total_sin_descuento' => $descuentoAplicado > 0 ? round($totalSinDescuento, 2) : null,
                 'descuento_aplicado' => $descuentoAplicado > 0 ? round($descuentoAplicado, 2) : null,
+                'bistrocoins_usados' => $bistrocoinsUsados,
+                'bistrocoins_ganados' => $bistrocoinsGanados,
+                'bistrocoins_liquidados' => $liquidado,
                 'oferta_id' => $ofertaAplicada ? (int) $ofertaAplicada : null,
                 'cliente_id' => $clienteId,
             ]);
@@ -147,14 +220,16 @@ final class PedidoRepository
             $stmtLinea = $pdo->prepare(
                 'INSERT INTO pedido_lineas (
                     pedido_id, producto_id, producto_nombre, precio_base, iva,
-                    precio_final_unitario, cantidad, subtotal
+                    precio_final_unitario, cantidad, subtotal, es_recompensa,
+                    bistrocoins_unit, bistrocoins_total
                  ) VALUES (
                     :pedido_id, :producto_id, :producto_nombre, :precio_base, :iva,
-                    :precio_final_unitario, :cantidad, :subtotal
+                    :precio_final_unitario, :cantidad, :subtotal, :es_recompensa,
+                    :bistrocoins_unit, :bistrocoins_total
                  )'
             );
 
-            foreach ($lineas as $linea) {
+            foreach ($lineasPago as $linea) {
                 $stmtLinea->execute([
                     'pedido_id' => $pedidoId,
                     'producto_id' => $linea['producto_id'],
@@ -164,6 +239,38 @@ final class PedidoRepository
                     'precio_final_unitario' => $linea['precio_final_unitario'],
                     'cantidad' => $linea['cantidad'],
                     'subtotal' => $linea['subtotal'],
+                    'es_recompensa' => 0,
+                    'bistrocoins_unit' => null,
+                    'bistrocoins_total' => null,
+                ]);
+            }
+
+            foreach ($lineasRecompensa as $linea) {
+                $stmtLinea->execute([
+                    'pedido_id' => $pedidoId,
+                    'producto_id' => $linea['producto_id'],
+                    'producto_nombre' => $linea['producto_nombre'],
+                    'precio_base' => 0,
+                    'iva' => 0,
+                    'precio_final_unitario' => 0,
+                    'cantidad' => $linea['cantidad'],
+                    'subtotal' => 0,
+                    'es_recompensa' => 1,
+                    'bistrocoins_unit' => $linea['bistrocoins_unit'],
+                    'bistrocoins_total' => $linea['bistrocoins_total'],
+                ]);
+            }
+
+            if ($liquidado === 1 && ($bistrocoinsUsados > 0 || $bistrocoinsGanados > 0)) {
+                $nuevoSaldo = $saldoActual - $bistrocoinsUsados + $bistrocoinsGanados;
+                if ($nuevoSaldo < 0) {
+                    throw new RuntimeException('Saldo de BistroCoins insuficiente.');
+                }
+
+                $stmtSaldo = $pdo->prepare('UPDATE usuarios SET bistrocoins = :bistrocoins WHERE id = :id');
+                $stmtSaldo->execute([
+                    'id' => $clienteId,
+                    'bistrocoins' => $nuevoSaldo,
                 ]);
             }
 
@@ -245,6 +352,19 @@ final class PedidoRepository
         return $stmt->fetchAll();
     }
 
+    public static function pendingBistrocoinsByCliente(int $clienteId): int
+    {
+        $stmt = db()->prepare(
+            "SELECT COALESCE(SUM(bistrocoins_usados), 0)
+             FROM pedidos
+             WHERE cliente_id = :cliente_id
+               AND bistrocoins_liquidados = 0
+               AND estado IN ('nuevo', 'recibido')"
+        );
+        $stmt->execute(['cliente_id' => $clienteId]);
+        return (int) $stmt->fetchColumn();
+    }
+
     public static function forCamareroPanel(): array
     {
         $stmt = db()->prepare(
@@ -260,17 +380,78 @@ final class PedidoRepository
 
     public static function marcarEnPreparacion(int $pedidoId, int $camareroId): bool
     {
-        $stmt = db()->prepare(
-            "UPDATE pedidos 
-             SET estado = 'en_preparacion', camarero_id = :camarero_id
-             WHERE id = :id AND estado = 'recibido'"
-        );
-        $stmt->execute([
-            'id' => $pedidoId,
-            'camarero_id' => $camareroId,
-        ]);
+        $pdo = db();
+        $pdo->beginTransaction();
 
-        return $stmt->rowCount() === 1;
+        try {
+            $stmtPedido = $pdo->prepare(
+                "SELECT id, estado, cliente_id, bistrocoins_usados, bistrocoins_ganados, bistrocoins_liquidados
+                 FROM pedidos
+                 WHERE id = :id
+                 FOR UPDATE"
+            );
+            $stmtPedido->execute(['id' => $pedidoId]);
+            $pedido = $stmtPedido->fetch();
+
+            if (!is_array($pedido) || (string) $pedido['estado'] !== 'recibido') {
+                $pdo->rollBack();
+                return false;
+            }
+
+            $clienteId = (int) $pedido['cliente_id'];
+            $coinsUsados = (int) $pedido['bistrocoins_usados'];
+            $coinsGanados = (int) $pedido['bistrocoins_ganados'];
+            $liquidado = (int) $pedido['bistrocoins_liquidados'] === 1;
+
+            if (!$liquidado && ($coinsUsados > 0 || $coinsGanados > 0)) {
+                $stmtSaldo = $pdo->prepare('SELECT bistrocoins FROM usuarios WHERE id = :id FOR UPDATE');
+                $stmtSaldo->execute(['id' => $clienteId]);
+                $usuario = $stmtSaldo->fetch();
+                if (!$usuario) {
+                    $pdo->rollBack();
+                    return false;
+                }
+
+                $saldoActual = (int) $usuario['bistrocoins'];
+                if ($saldoActual < $coinsUsados) {
+                    $pdo->rollBack();
+                    return false;
+                }
+
+                $nuevoSaldo = $saldoActual - $coinsUsados + $coinsGanados;
+                $stmtActualizaSaldo = $pdo->prepare('UPDATE usuarios SET bistrocoins = :bistrocoins WHERE id = :id');
+                $stmtActualizaSaldo->execute([
+                    'id' => $clienteId,
+                    'bistrocoins' => $nuevoSaldo,
+                ]);
+            }
+
+            $stmtUpdate = $pdo->prepare(
+                "UPDATE pedidos
+                 SET estado = 'en_preparacion',
+                     camarero_id = :camarero_id,
+                     bistrocoins_liquidados = 1
+                 WHERE id = :id AND estado = 'recibido'"
+            );
+            $stmtUpdate->execute([
+                'id' => $pedidoId,
+                'camarero_id' => $camareroId,
+            ]);
+
+            $ok = $stmtUpdate->rowCount() === 1;
+            if (!$ok) {
+                $pdo->rollBack();
+                return false;
+            }
+
+            $pdo->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 
     public static function marcarTerminado(int $pedidoId, int $camareroId): bool
@@ -318,7 +499,6 @@ final class PedidoRepository
         return $stmt->rowCount() === 1;
     }
 
-
     public static function forCocineroPanel(): array
     {
         $stmt = db()->prepare(
@@ -362,9 +542,6 @@ final class PedidoRepository
         return $stmt->rowCount() === 1;
     }
 
-
-
-    
     public static function marcarListoCocina(int $pedidoId, int $cocineroId): bool
     {
         $stmt = db()->prepare(
@@ -385,7 +562,7 @@ final class PedidoRepository
         return match ($estado) {
             'nuevo' => 'Nuevo',
             'recibido' => 'Recibido',
-            'en_preparacion' => 'En preparación',
+            'en_preparacion' => 'En preparacion',
             'cocinando' => 'Cocinando',
             'listo_cocina' => 'Listo cocina',
             'terminado' => 'Terminado',
@@ -416,7 +593,7 @@ final class PedidoRepository
     private static function normalizeTipo(string $tipo): string
     {
         if (!in_array($tipo, self::TIPOS, true)) {
-            throw new InvalidArgumentException('Tipo de pedido inválido.');
+            throw new InvalidArgumentException('Tipo de pedido invalido.');
         }
 
         return $tipo;
@@ -425,7 +602,7 @@ final class PedidoRepository
     private static function normalizeMetodoPago(string $metodoPago): string
     {
         if (!in_array($metodoPago, self::METODOS_PAGO, true)) {
-            throw new InvalidArgumentException('Método de pago inválido.');
+            throw new InvalidArgumentException('Metodo de pago invalido.');
         }
 
         return $metodoPago;

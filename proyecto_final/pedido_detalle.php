@@ -7,7 +7,7 @@ $usuario = require_login();
 $pedidoId = get_positive_int('id');
 
 if ($pedidoId === null) {
-    flash_set('error', 'Pedido inválido.');
+    flash_set('error', 'Pedido invalido.');
     redirect_to('mis_pedidos.php');
 }
 
@@ -38,17 +38,34 @@ foreach ($lineas as $linea) {
         $lineasPreparadas++;
     }
 
+    $esRecompensa = (int) ($linea['es_recompensa'] ?? 0) === 1;
+    $nombreProducto = (string) ($linea['producto_nombre'] ?? '');
+    if ($esRecompensa && stripos($nombreProducto, '(Recompensa)') === false) {
+        $nombreProducto .= ' (Recompensa)';
+    }
+
+    $precioUnidad = $esRecompensa
+        ? '0.00 EUR'
+        : money_eur((float) $linea['precio_final_unitario']);
+    $subtotal = $esRecompensa
+        ? '0.00 EUR'
+        : money_eur((float) $linea['subtotal']);
+    $coinsLinea = $esRecompensa
+        ? (string) (int) ($linea['bistrocoins_total'] ?? 0)
+        : '-';
+
     $filas .= '<tr>' .
-        '<td>' . h((string) $linea['producto_nombre']) . '</td>' .
+        '<td>' . h($nombreProducto) . '</td>' .
         '<td>' . (int) $linea['cantidad'] . '</td>' .
-        '<td>' . h(money_eur((float) $linea['precio_final_unitario'])) . '</td>' .
-        '<td>' . h(money_eur((float) $linea['subtotal'])) . '</td>' .
-        '<td>' . ($estaPreparada ? 'Sí' : 'No') . '</td>' .
+        '<td>' . h($precioUnidad) . '</td>' .
+        '<td>' . h($subtotal) . '</td>' .
+        '<td>' . h($coinsLinea) . '</td>' .
+        '<td>' . ($estaPreparada ? 'Si' : 'No') . '</td>' .
         '</tr>';
 }
 
 if ($filas === '') {
-    $filas = '<tr><td colspan="5">No hay líneas en este pedido.</td></tr>';
+    $filas = '<tr><td colspan="6">No hay lineas en este pedido.</td></tr>';
 }
 
 $numeroVisible = (int) $pedido['numero_dia'] . '/' . (string) $pedido['fecha_dia'];
@@ -56,6 +73,8 @@ $estadoLabel = PedidoRepository::estadoLabel((string) $pedido['estado']);
 $tipoLabel = PedidoRepository::tipoLabel((string) $pedido['tipo']);
 $metodoPagoLabel = PedidoRepository::metodoPagoLabel((string) $pedido['metodo_pago']);
 $estadoCocina = (string) $pedido['estado'];
+$coinsUsados = (int) ($pedido['bistrocoins_usados'] ?? 0);
+$coinsGanados = (int) ($pedido['bistrocoins_ganados'] ?? 0);
 
 $cocineroAsignado = trim((string) ($pedido['cocinero_usuario'] ?? ''));
 if ($cocineroAsignado === '') {
@@ -63,9 +82,9 @@ if ($cocineroAsignado === '') {
 }
 
 $estadoCocinaTexto = match ($estadoCocina) {
-    'nuevo' => 'Pedido en creación (carrito)',
-    'recibido' => 'Recibido, aún no enviado a cocina',
-    'en_preparacion' => 'En preparación, pendiente de que lo tome cocina',
+    'nuevo' => 'Pedido en creacion (carrito)',
+    'recibido' => 'Recibido, aun no enviado a cocina',
+    'en_preparacion' => 'En preparacion, pendiente de que lo tome cocina',
     'cocinando' => 'Cocinando actualmente',
     'listo_cocina' => 'Cocina finalizada, pendiente de camarero',
     'terminado' => 'Preparado para entrega',
@@ -86,7 +105,7 @@ if ($esGerente) {
   <ul>
     <li><strong>Estado de cocina:</strong> {estado_cocina_texto}</li>
     <li><strong>Cocinero asignado:</strong> {cocinero_asignado}</li>
-    <li><strong>Progreso de líneas:</strong> {lineas_preparadas}/{lineas_totales} ({progreso_porcentaje}%)</li>
+    <li><strong>Progreso de lineas:</strong> {lineas_preparadas}/{lineas_totales} ({progreso_porcentaje}%)</li>
   </ul>
   <p>
     <progress max="100" value="{progreso_porcentaje}">{progreso_porcentaje}%</progress>
@@ -99,17 +118,28 @@ $volver = $esGerente
     ? base_url('pedidos.php')
     : ($esCamarero ? base_url('pedidos_camarero.php') : base_url('mis_pedidos.php'));
 
+$totalSinDescuento = $pedido['total_sin_descuento'] !== null
+    ? money_eur((float) $pedido['total_sin_descuento'])
+    : null;
+$descuentoAplicado = $pedido['descuento_aplicado'] !== null
+    ? money_eur((float) $pedido['descuento_aplicado'])
+    : null;
+
 $contenido = <<<HTML
 <section>
   <h2>Detalle de pedido</h2>
   <ul>
     <li><strong>ID:</strong> {id}</li>
-    <li><strong>Número del día:</strong> {numero_visible}</li>
+    <li><strong>Numero del dia:</strong> {numero_visible}</li>
     <li><strong>Fecha/hora:</strong> {fecha_pedido}</li>
     <li><strong>Cliente:</strong> {cliente}</li>
     <li><strong>Estado:</strong> {estado}</li>
     <li><strong>Tipo:</strong> {tipo}</li>
-    <li><strong>Método de pago:</strong> {metodo_pago}</li>
+    <li><strong>Metodo de pago:</strong> {metodo_pago}</li>
+    {total_sin_descuento}
+    {descuento_aplicado}
+    <li><strong>BistroCoins usados:</strong> {coins_usados}</li>
+    <li><strong>BistroCoins ganados:</strong> {coins_ganados}</li>
     <li><strong>Total:</strong> {total}</li>
   </ul>
 </section>
@@ -117,7 +147,7 @@ $contenido = <<<HTML
 {bloque_cocina}
 
 <section>
-  <h3>Líneas del pedido</h3>
+  <h3>Lineas del pedido</h3>
   <table class="table">
     <thead>
       <tr>
@@ -125,6 +155,7 @@ $contenido = <<<HTML
         <th>Cantidad</th>
         <th>Precio unidad</th>
         <th>Subtotal</th>
+        <th>BistroCoins</th>
         <th>Preparada</th>
       </tr>
     </thead>
@@ -137,7 +168,7 @@ $contenido = <<<HTML
 HTML;
 
 $contenido = str_replace(
-    ['{id}', '{numero_visible}', '{fecha_pedido}', '{cliente}', '{estado}', '{tipo}', '{metodo_pago}', '{total}', '{bloque_cocina}', '{estado_cocina_texto}', '{cocinero_asignado}', '{lineas_preparadas}', '{lineas_totales}', '{progreso_porcentaje}', '{volver}'],
+    ['{id}', '{numero_visible}', '{fecha_pedido}', '{cliente}', '{estado}', '{tipo}', '{metodo_pago}', '{total_sin_descuento}', '{descuento_aplicado}', '{coins_usados}', '{coins_ganados}', '{total}', '{bloque_cocina}', '{estado_cocina_texto}', '{cocinero_asignado}', '{lineas_preparadas}', '{lineas_totales}', '{progreso_porcentaje}', '{volver}'],
     [
         (string) (int) $pedido['id'],
         h($numeroVisible),
@@ -146,6 +177,10 @@ $contenido = str_replace(
         h($estadoLabel),
         h($tipoLabel),
         h($metodoPagoLabel),
+        $totalSinDescuento !== null ? '<li><strong>Total sin descuento:</strong> ' . h($totalSinDescuento) . '</li>' : '',
+        $descuentoAplicado !== null ? '<li><strong>Descuento aplicado:</strong> ' . h($descuentoAplicado) . '</li>' : '',
+        (string) $coinsUsados,
+        (string) $coinsGanados,
         h(money_eur((float) $pedido['total'])),
         $bloqueCocina,
         h($estadoCocinaTexto),

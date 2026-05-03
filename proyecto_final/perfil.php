@@ -155,6 +155,7 @@ if (is_post()) {
                     'nombre_usuario' => (string) $usuarioActualizado['nombre_usuario'],
                     'nombre' => (string) $usuarioActualizado['nombre'],
                     'rol' => (string) $usuarioActualizado['rol'],
+                    'bistrocoins' => (int) ($usuarioActualizado['bistrocoins'] ?? 0),
                     'avatar' => $usuarioActualizado['avatar'] ? (string) $usuarioActualizado['avatar'] : null,
                 ];
             }
@@ -219,6 +220,20 @@ if ($errores) {
     $listaErrores = '<ul>' . $items . '</ul>';
 }
 
+$bistrocoinsActuales = (int) ($usuario['bistrocoins'] ?? 0);
+$bistrocoinsReservados = PedidoRepository::pendingBistrocoinsByCliente((int) $usuario['id']);
+$bistrocoinsDisponibles = max(0, $bistrocoinsActuales - $bistrocoinsReservados);
+$bloqueBistrocoins = <<<HTML
+<section class="card reward-summary-card">
+  <h3>BistroCoins</h3>
+  <p><strong>Saldo actual:</strong> {$bistrocoinsActuales}</p>
+  <p><strong>Reservados en pedidos pendientes:</strong> {$bistrocoinsReservados}</p>
+  <p><strong>Disponibles para canje:</strong> {$bistrocoinsDisponibles}</p>
+  <p><a class="btn" href="{recompensas}">Ver recompensas</a></p>
+</section>
+HTML;
+$bloqueBistrocoins = str_replace('{recompensas}', h(base_url('recompensas_cliente.php')), $bloqueBistrocoins);
+
 $pedidosActivosPerfil = PedidoRepository::forCliente((int) $usuario['id'], ['en_preparacion', 'cocinando', 'listo_cocina', 'terminado']);
 $filasPedidosPerfil = '';
 foreach ($pedidosActivosPerfil as $pedido) {
@@ -263,6 +278,7 @@ $contenido = <<<HTML
 <section>
   <h2>Mi perfil</h2>
   {$listaErrores}
+  {$bloqueBistrocoins}
   {$avatarHtml}
   {$bloqueAvataresPredefinidos}
   <form method="post" action="{action}" enctype="multipart/form-data">
